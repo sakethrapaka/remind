@@ -235,6 +235,7 @@ const notifyAt = new Date(
     <option value="daily">Daily</option>
     <option value="2days">Every 2 Days</option>
     <option value="weekly">Weekly</option>
+    
   </select>
 </div>
 
@@ -253,16 +254,6 @@ const notifyAt = new Date(
   </select>
 </div>
 
-{/* 🔔 Continuous Notification */}
-<div className="flex items-center gap-2">
-  <input
-    type="checkbox"
-    checked={continuousNotify}
-    onChange={(e) => setContinuousNotify(e.target.checked)}
-  />
-  <Label>Continuous notification until completed</Label>
-</div>
-
           {/* Submit Button */}
           <Button
             type="submit"
@@ -272,23 +263,6 @@ const notifyAt = new Date(
           </Button>
         </form>
       </div>
-
-      {/* Info Card */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-        className="mt-6 bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4 border border-purple-200 dark:border-purple-800"
-      >
-        <h3 className="font-semibold text-purple-900 dark:text-purple-100 mb-2">
-          💡 Smart Features
-        </h3>
-        <ul className="text-sm text-purple-700 dark:text-purple-300 space-y-1">
-          <li>• Automatic category detection based on your task description</li>
-          <li>• Find nearby locations for medicine, groceries, and more</li>
-          <li>• Get notified before your task is due</li>
-        </ul>
-      </motion.div>
     </motion.div>
   );
 }
