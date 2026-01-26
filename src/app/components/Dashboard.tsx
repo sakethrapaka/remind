@@ -5,18 +5,15 @@ import { ScrollArea } from '@/app/components/ui/scroll-area';
 import { Badge } from '@/app/components/ui/badge';
 import { AlertTriangle } from 'lucide-react';
 
-
-
 import {
   Bell,
+  BellOff,
   Home,
   MapPin,
   PlusCircle,
   Clock,
   CheckCircle,
-  Pencil,
   ListTodo,
-  Sparkles,
   Settings,
   X,
   Trash2,
@@ -61,9 +58,44 @@ export function Dashboard({
   const [quickAdds, setQuickAdds] = useState(quickAddSuggestions);
 
 
+const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
+  return localStorage.getItem('notifications') !== 'false';
+});
+
+const [userName, setUserName] = useState(() => {
+  const savedName = localStorage.getItem('userName');
+  const savedEmail = localStorage.getItem('userEmail');
+
+  // If same user AND name was edited → use saved name
+  if (savedName && savedEmail === userEmail) {
+    return savedName;
+  }
+
+  // Otherwise → email name
+  return userEmail.split('@')[0];
+});
+
+useEffect(() => {
+  const storedName = localStorage.getItem('userName');
+  if (storedName) {
+    setUserName(storedName);
+  } else {
+    setUserName(userEmail.split('@')[0]);
+  }
+}, [userEmail]);
 
 
-  const userName = userEmail.split('@')[0];
+useEffect(() => {
+  const handleStorageChange = () => {
+    setNotificationsEnabled(
+      localStorage.getItem('notifications') !== 'false'
+    );
+  };
+
+  window.addEventListener('storage', handleStorageChange);
+  return () => window.removeEventListener('storage', handleStorageChange);
+}, []);
+
   const currentHour = new Date().getHours();
   const greeting =
     currentHour < 12
@@ -97,13 +129,14 @@ const upcomingTasks = sortTasksByTime(
 const pendingTasks = sortTasksByTime(
   tasks.filter(task => {
     if (task.completed) return false;
-    return getTaskDateTime(task) <= now;
+    return getTaskDateTime(task) <= now; // ⬅️ ONLY past / overdue
   })
 );
 
 const completedTasks = sortTasksByTime(
   tasks.filter(task => task.completed)
 );
+
 
 const computeNotifications = () => {
   const now = new Date();
@@ -122,6 +155,11 @@ const computeNotifications = () => {
 };
 
 useEffect(() => {
+  if (!notificationsEnabled) {
+    setNotifications([]);
+    return;
+  }
+
   const interval = setInterval(() => {
     const now = new Date();
 
@@ -130,18 +168,14 @@ useEffect(() => {
       if (!task.notifyAt) return false;
 
       const notifyTime = new Date(task.notifyAt);
-
-      // notify when time reached OR passed
       return notifyTime <= now;
     });
 
     setNotifications(dueNotifications);
-  }, 60000); // every 1 min
+  }, 60000);
 
   return () => clearInterval(interval);
-}, [tasks]);
-
-
+}, [tasks, notificationsEnabled]);
 
 const handleQuickAdd = (suggestion: Task) => {
   // ✅ check ONLY upcoming reminders using sourceId
@@ -309,7 +343,6 @@ const handleQuickAdd = (suggestion: Task) => {
     onClick={(e) => {
       e.stopPropagation();
       onToggleComplete(task.id);
-      toast.success('Task marked as completed');
     }}
     className="mt-0.5"
   >
@@ -367,16 +400,7 @@ const handleQuickAdd = (suggestion: Task) => {
               </AnimatePresence>
               {sidebarView === 'completed' && completedTasks.length > 0 && (
   <div className="p-4">
-    <Button
-      variant="destructive"
-      className="w-full"
-      onClick={() => {
-        completedTasks.forEach((task) => onDeleteTask(task.id));
-        toast.success('All completed tasks deleted');
-      }}
-    >
-      Delete All Completed
-    </Button>
+    
   </div>
 )}
 
@@ -443,14 +467,24 @@ const handleQuickAdd = (suggestion: Task) => {
             {/* Notifications */}
             <div className="relative">
               <button
-                onClick={() => setShowNotifications(!showNotifications)}
-                className="relative p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              >
-                <Bell className="w-6 h-6 text-gray-600 dark:text-gray-400" />
-                {notifications.length > 0 && (
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-                )}
-              </button>
+  disabled={!notificationsEnabled}
+  onClick={() => setShowNotifications(!showNotifications)}
+  className={`relative p-2 rounded-xl transition-colors ${
+    notificationsEnabled
+      ? 'hover:bg-gray-100 dark:hover:bg-gray-700'
+      : 'opacity-40 cursor-not-allowed'
+  }`}
+>
+{notificationsEnabled ? (
+  <Bell className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+) : (
+  <BellOff className="w-6 h-6 text-gray-400 dark:text-gray-500" />
+)}
+
+              
+
+               
+</button>
 
               {showNotifications && (
                 <motion.div
@@ -684,9 +718,16 @@ const handleQuickAdd = (suggestion: Task) => {
       <AnimatePresence>
         {showSettings && (
           <SettingsPanel
-            userEmail={userEmail}
-            onClose={() => setShowSettings(false)}
-          />
+  userEmail={userEmail}
+  onClose={() => setShowSettings(false)}
+  onNameChange={(newName) => setUserName(newName)}
+  onNotificationChange={(value) => {
+    setNotificationsEnabled(value);
+    localStorage.setItem('notifications', String(value));
+  }}
+/>
+
+
         )}
       </AnimatePresence>
     </div>

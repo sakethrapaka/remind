@@ -3,7 +3,6 @@ import { Toaster } from "@/app/components/ui/sonner";
 import { SignIn } from "@/app/components/SignIn";
 import { Dashboard } from "@/app/components/Dashboard";
 import { Task } from "@/app/types";
-import { mockTasks } from "@/app/utils/mockData";
 import { toast } from "sonner";
 
 export default function App() {
@@ -17,29 +16,35 @@ const handleUpdateTask = (updatedTask: Task) => {
   );
 };
 
-  useEffect(() => {
-    // Check if user is already logged in
-    const savedUser = localStorage.getItem("user");
-    if (savedUser) {
-      const userData = JSON.parse(savedUser);
-      setUser(userData.email);
-    }
+useEffect(() => {
+  // Load user
+  const savedUser = localStorage.getItem("user");
+  if (savedUser) {
+    const userData = JSON.parse(savedUser);
+    setUser(userData.email);
+  }
 
-    // Load tasks from localStorage or use mock data
-    const savedTasks = localStorage.getItem("tasks");
-    if (savedTasks) {
-      setTasks(JSON.parse(savedTasks));
-    } else {
-      setTasks(mockTasks);
-      localStorage.setItem("tasks", JSON.stringify(mockTasks));
-    }
+  // Load tasks
+ const savedTasks = localStorage.getItem("tasks");
+if (savedTasks) {
+  setTasks(JSON.parse(savedTasks));
+} else {
+  setTasks([]); // ✅ start empty
+}
 
-    // Check for saved theme
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme === "dark") {
-      document.documentElement.classList.add("dark");
-    }
-  }, []);
+
+
+  // Load theme
+  const savedTheme = localStorage.getItem("theme");
+  if (savedTheme === "dark") {
+    document.documentElement.classList.add("dark");
+  }
+}, []);
+
+useEffect(() => {
+  localStorage.setItem("tasks", JSON.stringify(tasks));
+}, [tasks]);
+
 
   const handleSignIn = (email: string) => {
     setUser(email);

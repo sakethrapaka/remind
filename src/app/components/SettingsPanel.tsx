@@ -4,45 +4,72 @@ import { Button } from '@/app/components/ui/button';
 import { Label } from '@/app/components/ui/label';
 import { Switch } from '@/app/components/ui/switch';
 import { Avatar, AvatarFallback } from '@/app/components/ui/avatar';
-import { X, User, Moon, Sun, Bell, LogOut } from 'lucide-react';
+import { X, User, Moon, Sun,Pencil,Check, Bell,Mail ,LogOut } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface SettingsPanelProps {
   userEmail: string;
   onClose: () => void;
+   onNameChange: (name: string) => void; 
+    onNotificationChange: (value: boolean) => void; 
 }
 
-export function SettingsPanel({ userEmail, onClose }: SettingsPanelProps) {
+export function SettingsPanel({
+  userEmail,
+  onClose,
+  onNameChange,
+  onNotificationChange, 
+}: SettingsPanelProps) {
+
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
+  return localStorage.getItem('notifications') !== 'false';
+});
 
-  useEffect(() => {
-    // Check current theme
-    const isDark = document.documentElement.classList.contains('dark');
-    setIsDarkMode(isDark);
-  }, []);
+ useEffect(() => {
+  const storedTheme = localStorage.getItem('theme');
+  if (storedTheme === 'dark') {
+    document.documentElement.classList.add('dark');
+    setIsDarkMode(true);
+  }
+}, []);
 
-  const toggleTheme = () => {
-    const newDarkMode = !isDarkMode;
-    setIsDarkMode(newDarkMode);
-    
-    if (newDarkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-    
-    toast.success(`Theme changed to ${newDarkMode ? 'dark' : 'light'} mode`);
-  };
 
-  const toggleNotifications = () => {
-    setNotificationsEnabled(!notificationsEnabled);
-    toast.success(
-      notificationsEnabled ? 'Notifications disabled' : 'Notifications enabled'
-    );
-  };
+const [name, setName] = useState(
+  localStorage.getItem('userName') || userEmail.split('@')[0]
+);
+const [editingName, setEditingName] = useState(false);
+const [showSaveTick, setShowSaveTick] = useState(false);
+
+
+const toggleTheme = () => {
+  const newMode = !isDarkMode;
+  setIsDarkMode(newMode);
+
+  if (newMode) {
+    document.documentElement.classList.add('dark');
+    localStorage.setItem('theme', 'dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+    localStorage.setItem('theme', 'light');
+  }
+  toast.success(`Switched to ${newMode ? 'Dark' : 'Light'} mode`);
+};
+
+
+const toggleNotifications = () => {
+  const newValue = !notificationsEnabled;
+  setNotificationsEnabled(newValue);
+  localStorage.setItem('notifications', String(newValue));
+
+  onNotificationChange(newValue); // 🔥 THIS IS THE KEY LINE
+
+  toast.success(
+    newValue ? 'Notifications enabled' : 'Notifications disabled'
+  );
+};
+
+
 
   const handleLogout = () => {
     localStorage.removeItem('user');
@@ -91,30 +118,87 @@ export function SettingsPanel({ userEmail, onClose }: SettingsPanelProps) {
 
         {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-160px)]">
-          {/* Profile Section */}
-          <div className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <User className="w-4 h-4" />
-              Profile
-            </h3>
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
-              <div className="flex items-center gap-4">
-                <Avatar className="w-16 h-16 bg-gradient-to-br from-[#00AEEF] to-[#0A84FF]">
-                  <AvatarFallback className="text-white text-xl font-bold">
-                    {userInitials}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-semibold text-gray-900 dark:text-white">
-                    {userEmail.split('@')[0]}
-                  </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {userEmail}
-                  </p>
-                </div>
-              </div>
-            </div>
+
+         {/* Profile Section */}
+<div className="mb-6">
+  <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+    <User className="w-4 h-4" />
+    Profile
+  </h3>
+
+  <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
+    <div className="flex items-center gap-4">
+      {/* Avatar */}
+      <Avatar className="w-14 h-14 bg-gradient-to-br from-[#00AEEF] to-[#0A84FF]">
+        <AvatarFallback className="text-white text-lg font-bold">
+          {name.slice(0, 2).toUpperCase()}
+        </AvatarFallback>
+      </Avatar>
+
+      {/* Name + Email */}
+      <div className="flex-1">
+        <Label className="text-xs text-gray-500 dark:text-gray-400">
+          Display Name
+        </Label>
+
+        {/* VIEW MODE */}
+        {!editingName ? (
+          <div className="flex items-center gap-2">
+            <p className="font-semibold text-gray-900 dark:text-white">
+              {name}
+            </p>
+            <button
+              onClick={() => {
+                setEditingName(true);
+                setShowSaveTick(false);
+              }}
+              className="text-[#0A84FF] hover:opacity-80"
+              title="Edit name"
+            >
+              <Pencil className="w-4 h-4" />
+            </button>
           </div>
+        ) : (
+          /* EDIT MODE */
+          <div className="relative mt-1">
+            <input
+              autoFocus
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                setShowSaveTick(true);
+              }}
+              className="w-full rounded-lg border px-3 py-2 pr-10 text-sm bg-white dark:bg-gray-800 dark:border-gray-600"
+            />
+
+            {/* SAVE TICK */}
+            {showSaveTick && (
+              <button
+                onClick={() => {
+                  localStorage.setItem('userName', name);
+                  onNameChange(name);
+                  setEditingName(false);
+                  setShowSaveTick(false);
+                  toast.success('Name saved');
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2"
+                title="Save"
+              >
+                <Check className="w-4 h-4 text-green-500 hover:text-green-600" />
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Email below name */}
+        <div className="mt-1 flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+          <Mail className="w-3.5 h-3.5" />
+          <span>{userEmail}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
           {/* Appearance */}
           <div className="mb-6">
@@ -138,7 +222,13 @@ export function SettingsPanel({ userEmail, onClose }: SettingsPanelProps) {
                     </p>
                   </div>
                 </div>
-                <Switch checked={isDarkMode} onCheckedChange={toggleTheme} />
+                <Switch
+  checked={isDarkMode}
+  onCheckedChange={toggleTheme}
+  className="bg-gray-300 data-[state=checked]:bg-[#0A84FF]"
+/>
+
+
               </div>
             </div>
           </div>
@@ -161,10 +251,11 @@ export function SettingsPanel({ userEmail, onClose }: SettingsPanelProps) {
                     </p>
                   </div>
                 </div>
-                <Switch
-                  checked={notificationsEnabled}
-                  onCheckedChange={toggleNotifications}
-                />
+              <Switch
+  checked={notificationsEnabled}
+  onCheckedChange={toggleNotifications}
+  className="bg-gray-300 data-[state=checked]:bg-[#0A84FF]"
+/>
               </div>
             </div>
           </div>
