@@ -82,3 +82,9 @@
   --sidebar-border: #1e293b;
   --sidebar-ring: #64748b;
 }
+
+/* ===== Date & Time input icon dark mode fix ===== */
+.dark input[type="date"]::-webkit-calendar-picker-indicator,
+.dark input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}

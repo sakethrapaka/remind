@@ -61,8 +61,8 @@ export function NearbyLocations({ tasks }: NearbyLocationsProps) {
         transition={{ delay: 0.1 }}
         className="mb-6"
       >
-        <div className="relative">
-          <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+        <div className="relative dark:text-white">
+          <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400 dark:text-white" />
           <Input
             placeholder="Search locations..."
             value={searchQuery}
@@ -80,7 +80,7 @@ export function NearbyLocations({ tasks }: NearbyLocationsProps) {
           transition={{ delay: 0.2 }}
           className="mb-6"
         >
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 dark:text-white">
             <Button
               variant={selectedCategory === null ? 'default' : 'outline'}
               onClick={() => setSelectedCategory(null)}
@@ -116,9 +116,9 @@ export function NearbyLocations({ tasks }: NearbyLocationsProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="mb-6 bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4 border border-purple-200 dark:border-purple-800"
+          className="mb-6 bg-purple-50 dark:bg-gray-500/20 rounded-xl p-4 border border-purple-200 dark:border-gray-800"
         >
-          <h3 className="font-semibold text-[#075f71]  dark:text-[#00A6C8]-100 mb-3 flex items-center gap-2">
+          <h3 className="font-semibold text-[#075f71]  dark:text-white mb-3 flex items-center gap-2">
             <Clock className="w-5 h-5" />
             Related Upcoming Tasks
           </h3>
@@ -128,10 +128,10 @@ export function NearbyLocations({ tasks }: NearbyLocationsProps) {
                 key={task.id}
                 className="flex items-center justify-between text-sm"
               >
-                <span className="text-[#075f71]  dark:text-[#00A6C8]-300">
+                <span className="text-[#075f71]  dark:text-white">
                   {task.title}
                 </span>
-                <Badge className=" bg-[#E6F9FC] text-[#00A6C8] ">
+                <Badge className=" bg-[#E6F9FC] border-white dark:bg-gray-800 text-[#00A6C8] dark:text-white">
                   {task.category}
                 </Badge>
               </div>
@@ -195,14 +195,14 @@ export function NearbyLocations({ tasks }: NearbyLocationsProps) {
                         {location.rating}
                       </span>
                     </div>
-                    <div className="text-[#00A6C8] hover:text-[#008FB0] ">
+                    <div className="text-[#00A6C8] dark:text-gray-400 hover:text-[#008FB0] ">
                       {location.distance} away
                     </div>
                   </div>
                 </div>
 
                 <Button
-                  className="px-3 py-1 rounded-full bg-[#E6F9FC] text-[#00A6C8] text-sm font-medium"
+                  className="px-3 py-1 bg-[#E6F9FC] border text-[#00A6C8] text-sm font-medium dark:bg-gray-800 dark:text-white "
                   onClick={() => {
                     window.open(
                       `https://www.google.com/maps/search/${encodeURIComponent(
@@ -212,7 +212,7 @@ export function NearbyLocations({ tasks }: NearbyLocationsProps) {
                     );
                   }}
                 >
-                  <Navigation className="w-4 h-4 mr-2" />
+                  <Navigation className="w-4 h-4 mr-2 dark:text-white" />
                   Navigate
                 </Button>
               </div>

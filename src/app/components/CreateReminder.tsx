@@ -93,7 +93,7 @@ const notifyAt = new Date(
           Create New Reminder
         </h2>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6 dark:text-white">
           {/* Task Title */}
           <div>
             <Label htmlFor="title" className="text-base">
