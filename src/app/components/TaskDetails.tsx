@@ -77,7 +77,7 @@ export function TaskDetails({
           {/* Date and Time Info */}
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
-              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 mb-2">
+              <div className="flex items-center gap-2 text-gray-600 dark:text-white mb-2">
                 <Calendar className="w-5 h-5" />
                 <span className="text-sm font-medium">Date</span>
               </div>
@@ -102,7 +102,7 @@ export function TaskDetails({
     />
   </div>
 ) : (
-  <p className="text-sm text-gray-500">
+  <p className="text-sm text-white">
     {task.date} at {task.time}
   </p>
 )}
@@ -114,14 +114,14 @@ export function TaskDetails({
 
           {/* Nearby Locations */}
           <div>
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-4 ">
               <MapPin className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                 Nearby Locations
               </h3>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-3 dark:text-white">
               {nearbyLocations.map((location) => (
                 <motion.div
                   key={location.id}
@@ -200,7 +200,7 @@ export function TaskDetails({
         </div>
 
        {/* Footer */}
-<div className="border-t border-gray-200 dark:border-gray-700 p-4 flex gap-3">
+<div className="border-t border-gray-200 dark:text-white dark:border-gray-700 p-4 flex gap-3">
 
 
   {/* Edit */}
@@ -228,14 +228,6 @@ export function TaskDetails({
   </Button>
 )}
 
-
-  {/* Delete */}
-  <Button
-    variant="destructive"
-    onClick={() => onDeleteTask(task.id)}
-  >
-    Delete
-  </Button>
 
   {/* Close */}
   <Button
