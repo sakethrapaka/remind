@@ -4,70 +4,70 @@ import { Button } from '@/app/components/ui/button';
 import { Label } from '@/app/components/ui/label';
 import { Switch } from '@/app/components/ui/switch';
 import { Avatar, AvatarFallback } from '@/app/components/ui/avatar';
-import { X, User, Moon, Sun,Pencil,Check, Bell,Mail ,LogOut } from 'lucide-react';
+import { X, User, Moon, Sun, Pencil, Check, Bell, Mail, LogOut } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface SettingsPanelProps {
   userEmail: string;
   onClose: () => void;
-   onNameChange: (name: string) => void; 
-    onNotificationChange: (value: boolean) => void; 
+  onNameChange: (name: string) => void;
+  onNotificationChange: (value: boolean) => void;
 }
 
 export function SettingsPanel({
   userEmail,
   onClose,
   onNameChange,
-  onNotificationChange, 
+  onNotificationChange,
 }: SettingsPanelProps) {
 
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
-  return localStorage.getItem('notifications') !== 'false';
-});
+    return localStorage.getItem('notifications') !== 'false';
+  });
 
- useEffect(() => {
-  const storedTheme = localStorage.getItem('theme');
-  if (storedTheme === 'dark') {
-    document.documentElement.classList.add('dark');
-    setIsDarkMode(true);
-  }
-}, []);
-
-
-const [name, setName] = useState(
-  localStorage.getItem('userName') || userEmail.split('@')[0]
-);
-const [editingName, setEditingName] = useState(false);
-const [showSaveTick, setShowSaveTick] = useState(false);
+  useEffect(() => {
+    const storedTheme = localStorage.getItem('theme');
+    if (storedTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+      setIsDarkMode(true);
+    }
+  }, []);
 
 
-const toggleTheme = () => {
-  const newMode = !isDarkMode;
-  setIsDarkMode(newMode);
-
-  if (newMode) {
-    document.documentElement.classList.add('dark');
-    localStorage.setItem('theme', 'dark');
-  } else {
-    document.documentElement.classList.remove('dark');
-    localStorage.setItem('theme', 'light');
-  }
-  toast.success(`Switched to ${newMode ? 'Dark' : 'Light'} mode`);
-};
-
-
-const toggleNotifications = () => {
-  const newValue = !notificationsEnabled;
-  setNotificationsEnabled(newValue);
-  localStorage.setItem('notifications', String(newValue));
-
-  onNotificationChange(newValue); // 🔥 THIS IS THE KEY LINE
-
-  toast.success(
-    newValue ? 'Notifications enabled' : 'Notifications disabled'
+  const [name, setName] = useState(
+    localStorage.getItem('userName') || userEmail.split('@')[0]
   );
-};
+  const [editingName, setEditingName] = useState(false);
+  const [showSaveTick, setShowSaveTick] = useState(false);
+
+
+  const toggleTheme = () => {
+    const newMode = !isDarkMode;
+    setIsDarkMode(newMode);
+
+    if (newMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+    toast.success(`Switched to ${newMode ? 'Dark' : 'Light'} mode`);
+  };
+
+
+  const toggleNotifications = () => {
+    const newValue = !notificationsEnabled;
+    setNotificationsEnabled(newValue);
+    localStorage.setItem('notifications', String(newValue));
+
+    onNotificationChange(newValue); // 🔥 THIS IS THE KEY LINE
+
+    toast.success(
+      newValue ? 'Notifications enabled' : 'Notifications disabled'
+    );
+  };
 
 
 
@@ -90,208 +90,151 @@ const toggleNotifications = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
       onClick={onClose}
     >
       <motion.div
-        initial={{ scale: 0.9, opacity: 0, x: 100 }}
-        animate={{ scale: 1, opacity: 1, x: 0 }}
-        exit={{ scale: 0.9, opacity: 0, x: 100 }}
+        initial={{ scale: 0.95, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.95, opacity: 0, y: 20 }}
         onClick={(e) => e.stopPropagation()}
-        className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden"
+        className="bg-white/60 dark:bg-black/60 backdrop-blur-3xl border border-white/40 dark:border-white/10 rounded-3xl shadow-[0_30px_60px_rgba(0,0,0,0.3)] max-w-md w-full overflow-hidden flex flex-col max-h-[90vh] bg-gradient-to-b from-white/40 to-white/10 dark:from-white/5 dark:to-transparent ring-1 ring-white/50 dark:ring-white/10"
       >
-        {/* Header */}
-        <div className="bg-gradient-to-r from-[#00AEEF] to-[#0A84FF] p-6 text-white">
-          <div className="flex items-start justify-between">
-            <div>
-              <h2 className="text-2xl font-bold mb-1">Settings</h2>
-              <p className="opacity-90 text-sm">Manage your preferences</p>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
+        {/* Header - Minimal & Clean */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-[#333]">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Settings</h2>
+          <button
+            onClick={onClose}
+            className="p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-[#292929] rounded-full transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-160px)]">
+        <div className="flex-1 overflow-y-auto p-6 space-y-8">
 
-         {/* Profile Section */}
-<div className="mb-6">
-  <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-    <User className="w-4 h-4" />
-    Profile
-  </h3>
+          {/* Profile Section */}
+          <section>
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4 px-1">Profile</h3>
+            <div className="flex items-center gap-4 px-1">
+              <Avatar className="w-16 h-16 border-2 border-white/20 dark:border-white/10 shadow-lg bg-[#e0b596]/90 backdrop-blur-sm">
+                <AvatarFallback className="text-[#1f1f1f] text-xl font-bold bg-[#e0b596]/90 backdrop-blur-sm">
+                  {name.slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
 
-  <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
-    <div className="flex items-center gap-4">
-      {/* Avatar */}
-      <Avatar className="w-14 h-14 bg-gradient-to-br from-[#00AEEF] to-[#0A84FF]">
-        <AvatarFallback className="text-white text-lg font-bold">
-          {name.slice(0, 2).toUpperCase()}
-        </AvatarFallback>
-      </Avatar>
+              <div className="flex-1 space-y-1">
+                <Label className="text-xs text-gray-500 dark:text-gray-400 font-normal">Display Name</Label>
 
-      {/* Name + Email */}
-      <div className="flex-1">
-        <Label className="text-xs text-gray-500 dark:text-gray-400">
-          Display Name
-        </Label>
-
-        {/* VIEW MODE */}
-        {!editingName ? (
-          <div className="flex items-center gap-2">
-            <p className="font-semibold text-gray-900 dark:text-white">
-              {name}
-            </p>
-            <button
-              onClick={() => {
-                setEditingName(true);
-                setShowSaveTick(false);
-              }}
-              className="text-[#0A84FF] hover:opacity-80"
-              title="Edit name"
-            >
-              <Pencil className="w-4 h-4" />
-            </button>
-          </div>
-        ) : (
-          /* EDIT MODE */
-          <div className="relative mt-1">
-            <input
-              autoFocus
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                setShowSaveTick(true);
-              }}
-              className="w-full rounded-lg border px-3 py-2 pr-10 text-sm bg-white dark:bg-gray-800 dark:border-gray-600"
-            />
-
-            {/* SAVE TICK */}
-            {showSaveTick && (
-              <button
-                onClick={() => {
-                  localStorage.setItem('userName', name);
-                  onNameChange(name);
-                  setEditingName(false);
-                  setShowSaveTick(false);
-                  toast.success('Name saved');
-                }}
-                className="absolute right-3 top-1/2 -translate-y-1/2"
-                title="Save"
-              >
-                <Check className="w-4 h-4 text-green-500 hover:text-green-600" />
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Email below name */}
-        <div className="mt-1 flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-          <Mail className="w-3.5 h-3.5" />
-          <span>{userEmail}</span>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-          {/* Appearance */}
-          <div className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">
-              Appearance
-            </h3>
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {isDarkMode ? (
-                    <Moon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                  ) : (
-                    <Sun className="w-5 h-5 text-yellow-600" />
-                  )}
-                  <div>
-                    <Label className="font-medium text-gray-900 dark:text-white">
-                      Dark Mode
-                    </Label>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Toggle dark theme
-                    </p>
+                {!editingName ? (
+                  <div className="flex items-center gap-2 group">
+                    <p className="font-semibold text-lg text-gray-900 dark:text-white">{name}</p>
+                    <button
+                      onClick={() => {
+                        setEditingName(true);
+                        setShowSaveTick(false);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 text-[#e0b596] p-1 hover:bg-[#e0b596]/10 rounded transition-all"
+                      title="Edit name"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
                   </div>
+                ) : (
+                  <div className="relative">
+                    <input
+                      autoFocus
+                      value={name}
+                      onChange={(e) => {
+                        setName(e.target.value);
+                        setShowSaveTick(true);
+                      }}
+                      className="w-full bg-transparent border-b border-[#e0b596] text-lg font-semibold text-gray-900 dark:text-white focus:outline-none py-0.5 px-0"
+                    />
+                    {showSaveTick && (
+                      <button
+                        onClick={() => {
+                          localStorage.setItem('userName', name);
+                          onNameChange(name);
+                          setEditingName(false);
+                          setShowSaveTick(false);
+                          toast.success('Name updated');
+                        }}
+                        className="absolute right-0 top-1/2 -translate-y-1/2 text-green-500 hover:text-green-600 p-1"
+                      >
+                        <Check className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
+                  <Mail className="w-3.5 h-3.5" />
+                  <span>{userEmail}</span>
                 </div>
-                <Switch
-  checked={isDarkMode}
-  onCheckedChange={toggleTheme}
-  className="bg-gray-300 data-[state=checked]:bg-[#0A84FF]"
-/>
-
-
               </div>
             </div>
-          </div>
+          </section>
 
-          {/* Notifications */}
-          <div className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">
-              Notifications
-            </h3>
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Bell className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                  <div>
-                    <Label className="font-medium text-gray-900 dark:text-white">
-                      Push Notifications
-                    </Label>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Get notified about upcoming tasks
-                    </p>
-                  </div>
+          {/* Preferences Section */}
+          <section className="space-y-4">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-1">Preferences</h3>
+
+            {/* Appearance */}
+            <div className="flex items-center justify-between p-3 rounded-2xl hover:bg-white/40 dark:hover:bg-white/10 transition-all duration-300 border border-transparent hover:border-white/20 hover:shadow-lg hover:backdrop-blur-md group">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-white/50 dark:bg-white/10 backdrop-blur-md text-gray-700 dark:text-[#e0b596] shadow-inner ring-1 ring-white/20 dark:ring-white/5">
+                  {isDarkMode ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
                 </div>
+                <div>
+                  <Label className="font-medium text-gray-900 dark:text-white block">Dark Mode</Label>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Reduce eye strain</p>
+                </div>
+              </div>
               <Switch
-  checked={notificationsEnabled}
-  onCheckedChange={toggleNotifications}
-  className="bg-gray-300 data-[state=checked]:bg-[#0A84FF]"
-/>
-              </div>
+                checked={isDarkMode}
+                onCheckedChange={toggleTheme}
+                className="data-[state=checked]:bg-[#e0b596]"
+              />
             </div>
-          </div>
 
-          {/* App Info */}
-          <div className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">
-              About
-            </h3>
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600 dark:text-gray-400">Version</span>
-                <span className="font-medium text-gray-900 dark:text-white">
-                  1.0.0
-                </span>
+            {/* Notifications */}
+            <div className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-[#25252b] transition-colors border border-transparent hover:border-gray-100 dark:hover:border-[#333]">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-lg bg-gray-100 dark:bg-[#333] text-gray-700 dark:text-[#e0b596]">
+                  <Bell className="w-5 h-5" />
+                </div>
+                <div>
+                  <Label className="font-medium text-gray-900 dark:text-white block">Notifications</Label>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Tasks & reminders</p>
+                </div>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600 dark:text-gray-400">
-                  Last Updated
-                </span>
-                <span className="font-medium text-gray-900 dark:text-white">
-                  Jan 2026
-                </span>
-              </div>
+              <Switch
+                checked={notificationsEnabled}
+                onCheckedChange={toggleNotifications}
+                className="data-[state=checked]:bg-[#e0b596]"
+              />
             </div>
-          </div>
+          </section>
 
-          {/* Logout Button */}
-          <Button
-            onClick={handleLogout}
-            variant="outline"
-            className="w-full border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Logout
-          </Button>
+          {/* Footer / About */}
+          <section className="pt-6 border-t border-gray-100 dark:border-[#333]">
+            <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-6 px-1">
+              <span>App Version</span>
+              <span className="font-mono">v1.2.0</span>
+            </div>
+
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="w-full h-12 border border-white/40 dark:border-white/10 bg-gradient-to-b from-white/30 to-white/10 dark:from-white/10 dark:to-transparent hover:bg-white/50 dark:hover:bg-white/20 backdrop-blur-md text-gray-700 dark:text-red-400 justify-center gap-2 group transition-all duration-300 rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.02] ring-1 ring-white/40 dark:ring-transparent"
+            >
+              <LogOut className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              Sign out
+            </Button>
+          </section>
+
         </div>
       </motion.div>
     </motion.div>

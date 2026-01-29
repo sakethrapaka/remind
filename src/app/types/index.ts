@@ -8,8 +8,12 @@ export interface Task {
   time?: string;
   createdAt?: string;
   completed?: boolean;
-  notifyAt?: string; 
+  notifyAt?: string;
   notifyBefore?: number;
+  // Frontend-only or metadata-mapped fields
+  duration?: number; // in minutes
+  location?: string;
+  isAllDay?: boolean;
 }
 
 

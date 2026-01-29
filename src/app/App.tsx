@@ -8,42 +8,42 @@ import { toast } from "sonner";
 export default function App() {
   const [user, setUser] = useState<string | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
-const handleUpdateTask = (updatedTask: Task) => {
-  setTasks((prev) =>
-    prev.map((task) =>
-      task.id === updatedTask.id ? updatedTask : task
-    )
-  );
-};
+  const handleUpdateTask = (updatedTask: Task) => {
+    setTasks((prev) =>
+      prev.map((task) =>
+        task.id === updatedTask.id ? updatedTask : task
+      )
+    );
+  };
 
-useEffect(() => {
-  // Load user
-  const savedUser = localStorage.getItem("user");
-  if (savedUser) {
-    const userData = JSON.parse(savedUser);
-    setUser(userData.email);
-  }
+  useEffect(() => {
+    // Load user
+    const savedUser = localStorage.getItem("user");
+    if (savedUser) {
+      const userData = JSON.parse(savedUser);
+      setUser(userData.email);
+    }
 
-  // Load tasks
- const savedTasks = localStorage.getItem("tasks");
-if (savedTasks) {
-  setTasks(JSON.parse(savedTasks));
-} else {
-  setTasks([]); // ✅ start empty
-}
+    // Load tasks
+    const savedTasks = localStorage.getItem("tasks");
+    if (savedTasks) {
+      setTasks(JSON.parse(savedTasks));
+    } else {
+      setTasks([]); // ✅ start empty
+    }
 
 
 
-  // Load theme
-  const savedTheme = localStorage.getItem("theme");
-  if (savedTheme === "dark") {
-    document.documentElement.classList.add("dark");
-  }
-}, []);
+    // Load theme
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    }
+  }, []);
 
-useEffect(() => {
-  localStorage.setItem("tasks", JSON.stringify(tasks));
-}, [tasks]);
+  useEffect(() => {
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+  }, [tasks]);
 
 
   const handleSignIn = (email: string) => {

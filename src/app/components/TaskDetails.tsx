@@ -30,214 +30,242 @@ export function TaskDetails({
 
   const [editedTask, setEditedTask] = useState({
     title: task.title,
-    description: task.description,
+    description: task.description ? task.description.replace(/<!-- metadata: .+ -->/, '').trim() : '',
     date: task.date,
     time: task.time,
   });
 
   const nearbyLocations = getNearbyLocations(task.category);
 
+  // Helper to parse metadata
+  const parsedMetadata = (() => {
+    const desc = task.description || '';
+    const match = desc.match(/<!-- metadata: (.+) -->/);
+    if (match) {
+      try {
+        return JSON.parse(match[1]);
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  })();
+
+  // Clean description without metadata
+  const cleanDescription = task.description ? task.description.replace(/<!-- metadata: .+ -->/, '').trim() : '';
+
   return (
-  
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
       onClick={onClose}
     >
       <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
+        initial={{ scale: 0.95, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.95, opacity: 0, y: 20 }}
         onClick={(e) => e.stopPropagation()}
-        className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
+        className="bg-white/60 dark:bg-black/60 backdrop-blur-3xl border border-white/40 dark:border-white/10 rounded-3xl shadow-[0_30px_60px_rgba(0,0,0,0.3)] max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden bg-gradient-to-b from-white/40 to-white/10 dark:from-white/5 dark:to-transparent ring-1 ring-white/50 dark:ring-white/10"
       >
-        {/* Header */}
-        <div className="bg-gradient-to-r from-[#00AEEF] to-[#0A84FF] p-6 text-white">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <Badge className="bg-white/20 text-white mb-3">
+        {/* Header - Professional Team Style */}
+        <div className="flex items-start justify-between p-6 border-b border-gray-100 dark:border-[#333]">
+          <div className="flex-1 pr-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Badge className={`
+                  ${task.category === 'Work' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                  task.category === 'Personal' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                    'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'} border-none px-2 py-0.5
+                `}>
                 {task.category}
               </Badge>
-              <h2 className="text-2xl font-bold mb-2">{task.title}</h2>
-              <p className="opacity-90">{task.description}</p>
+              {parsedMetadata?.priority && (
+                <span className="text-xs uppercase tracking-wider font-semibold text-gray-500">{parsedMetadata.priority} Priority</span>
+              )}
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
+
+            {isEditing ? (
+              <input
+                autoFocus
+                value={editedTask.title}
+                onChange={(e) => setEditedTask({ ...editedTask, title: e.target.value })}
+                className="text-2xl font-bold bg-transparent border-b border-[#e0b596] text-gray-900 dark:text-white w-full focus:outline-none placeholder-gray-400"
+              />
+            ) : (
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white leading-tight">{task.title}</h2>
+            )}
+
+            <div className="mt-2 text-gray-600 dark:text-gray-300">
+              {isEditing ? (
+                <textarea
+                  value={editedTask.description} // Correctly bind to local state
+                  onChange={(e) => setEditedTask({ ...editedTask, description: e.target.value })}
+                  className="w-full bg-gray-50 dark:bg-[#292929] rounded p-2 text-sm focus:outline-none resize-none h-20"
+                  placeholder="Description"
+                />
+              ) : (
+                <p className="whitespace-pre-wrap">{cleanDescription || "No description provided."}</p>
+              )}
+            </div>
           </div>
+          <button
+            onClick={onClose}
+            className="p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-[#292929] rounded-full transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
-          {/* Date and Time Info */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
-              <div className="flex items-center gap-2 text-gray-600 dark:text-white mb-2">
-                <Calendar className="w-5 h-5" />
-                <span className="text-sm font-medium">Date</span>
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-8">
+
+          {/* Metadata Grid */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="p-3 bg-gray-50 dark:bg-[#25252b] rounded-lg border border-gray-100 dark:border-[#333]">
+              <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-1">
+                <Calendar className="w-4 h-4" />
+                <span className="text-xs font-medium uppercase">Date</span>
               </div>
               {isEditing ? (
-  <div className="space-y-3">
-    <input
-      type="date"
-      value={editedTask.date}
-      onChange={(e) =>
-        setEditedTask({ ...editedTask, date: e.target.value })
-      }
-      className="w-full p-2 border rounded-lg"
-    />
-
-    <input
-      type="time"
-      value={editedTask.time}
-      onChange={(e) =>
-        setEditedTask({ ...editedTask, time: e.target.value })
-      }
-      className="w-full p-2 border rounded-lg"
-    />
-  </div>
-) : (
-  <p className="text-sm text-white">
-    {task.date} at {task.time}
-  </p>
-)}
-
+                <input
+                  type="date"
+                  value={editedTask.date}
+                  onChange={e => setEditedTask({ ...editedTask, date: e.target.value })}
+                  className="bg-transparent text-sm font-semibold w-full text-gray-900 dark:text-white"
+                />
+              ) : (
+                <div className="font-semibold text-gray-900 dark:text-white">{task.date}</div>
+              )}
             </div>
 
-           
+            <div className="p-3 bg-gray-50 dark:bg-[#25252b] rounded-lg border border-gray-100 dark:border-[#333]">
+              <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-1">
+                <Clock className="w-4 h-4" />
+                <span className="text-xs font-medium uppercase">Time</span>
+              </div>
+              {isEditing ? (
+                <input
+                  type="time"
+                  value={editedTask.time}
+                  onChange={e => setEditedTask({ ...editedTask, time: e.target.value })}
+                  className="bg-transparent text-sm font-semibold w-full text-gray-900 dark:text-white"
+                />
+              ) : (
+                <div className="font-semibold text-gray-900 dark:text-white">{task.time}</div>
+              )}
+            </div>
+
+            {parsedMetadata?.duration && (
+              <div className="p-3 bg-gray-50 dark:bg-[#25252b] rounded-lg border border-gray-100 dark:border-[#333]">
+                <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-1">
+                  <Clock className="w-4 h-4" />
+                  <span className="text-xs font-medium uppercase">Duration</span>
+                </div>
+                <div className="font-semibold text-gray-900 dark:text-white">{parsedMetadata.duration}m</div>
+              </div>
+            )}
+
+            {parsedMetadata?.location && (
+              <div className="p-3 bg-gray-50 dark:bg-[#25252b] rounded-lg border border-gray-100 dark:border-[#333]">
+                <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-1">
+                  <MapPin className="w-4 h-4" />
+                  <span className="text-xs font-medium uppercase">Location</span>
+                </div>
+                <div className="font-semibold text-gray-900 dark:text-white truncate" title={parsedMetadata.location}>
+                  {parsedMetadata.location}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Nearby Locations */}
-          <div>
-            <div className="flex items-center gap-2 mb-4 ">
-              <MapPin className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Nearby Locations
-              </h3>
-            </div>
+          {nearbyLocations.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-100 dark:border-[#333]">
+                <MapPin className="w-5 h-5 text-[#e0b596]" />
+                <h3 className="text-sm font-bold uppercase tracking-wide text-gray-900 dark:text-white">
+                  Nearby Recommendations
+                </h3>
+              </div>
 
-            <div className="space-y-3 dark:text-white">
-              {nearbyLocations.map((location) => (
-                <motion.div
-                  key={location.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
+              <div className="grid grid-cols-1 gap-3">
+                {nearbyLocations.map((location) => (
+                  <motion.div
+                    key={location.id}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center justify-between p-4 bg-white dark:bg-[#292929] rounded-xl border border-gray-200 dark:border-[#333] hover:border-[#e0b596] dark:hover:border-[#e0b596] transition-all group"
+                  >
+                    <div className="flex-1 min-w-0 mr-4">
                       <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-semibold text-gray-900 dark:text-white">
-                          {location.name}
-                        </h4>
-                        {location.isOpen ? (
-                          <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                            Open
-                          </Badge>
-                        ) : (
-                          <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-                            Closed
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                        {location.category}
-                      </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-500 flex items-center gap-1">
-                        <MapPin className="w-4 h-4" />
-                        {location.address}
-                      </p>
-                      <div className="flex items-center gap-3 mt-2">
-                        <span className="text-sm text-purple-600 dark:text-purple-400 font-medium">
-                          {location.distance}
+                        <h4 className="font-semibold text-gray-900 dark:text-white truncate">{location.name}</h4>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium border ${location.isOpen ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-900' : 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900'}`}>
+                          {location.isOpen ? 'Open' : 'Closed'}
                         </span>
-                        <div className="flex items-center gap-1">
-                          {[...Array(5)].map((_, i) => (
-                            <span
-                              key={i}
-                              className={`text-sm ${
-                                i < Math.floor(location.rating)
-                                  ? 'text-yellow-400'
-                                  : 'text-gray-300 dark:text-gray-600'
-                              }`}
-                            >
-                              ★
-                            </span>
-                          ))}
-                          <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
-                            {location.rating}
-                          </span>
-                        </div>
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-3">
+                        <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {location.distance}</span>
+                        <span className="flex items-center gap-1 text-orange-400">★ {location.rating}</span>
+                        <span className="truncate max-w-[200px]">{location.address}</span>
                       </div>
                     </div>
+
                     <Button
                       size="sm"
                       variant="outline"
-                      className="ml-4"
+                      className="border-gray-200 dark:border-[#444] bg-gradient-to-b from-[#e0b596]/90 to-[#c69472]/90 text-[#1f1f1f] shadow-[0_10px_20px_rgba(224,181,150,0.4),inset_0_1px_0_rgba(255,255,255,0.6)] border border-white/20 border-t-white/60 hover:brightness-110 hover:scale-[1.05] backdrop-blur-xl transition-all duration-300 rounded-xl"
                       onClick={() => {
-                        // In a real app, this would open maps
                         window.open(
-                          `https://www.google.com/maps/search/${encodeURIComponent(
-                            location.name + ' ' + location.address
-                          )}`,
+                          `https://www.google.com/maps/search/${encodeURIComponent(location.name + ' ' + location.address)}`,
                           '_blank'
                         );
                       }}
                     >
-                      <Navigation className="w-4 h-4 mr-1" />
+                      <Navigation className="w-3.5 h-3.5 mr-2" />
                       Navigate
                     </Button>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
-       {/* Footer */}
-<div className="border-t border-gray-200 dark:text-white dark:border-gray-700 p-4 flex gap-3">
+        {/* Footer Actions */}
+        <div className="p-4 border-t border-gray-100 dark:border-[#333] flex justify-end gap-3 bg-gray-50 dark:bg-[#1f1f1f]">
+          {!isEditing ? (
+            <>
+              <Button variant="outline" onClick={() => setIsEditing(true)} className="border-gray-300 dark:border-[#444] hover:bg-white dark:hover:bg-[#292929]">
+                Edit Task
+              </Button>
+              <Button onClick={onClose} className="bg-gradient-to-b from-[#e0b596]/90 to-[#c69472]/90 text-[#1f1f1f] shadow-[0_10px_20px_rgba(224,181,150,0.4),inset_0_1px_0_rgba(255,255,255,0.6)] border border-white/20 border-t-white/60 hover:brightness-110 hover:scale-[1.05] backdrop-blur-xl transition-all duration-300 rounded-xl">
+                Close
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="ghost" onClick={() => setIsEditing(false)}>Cancel</Button>
+              <Button onClick={() => {
+                const metaString = parsedMetadata ? `<!-- metadata: ${JSON.stringify(parsedMetadata)} -->` : '';
+                const finalDesc = `${editedTask.description} ${metaString}`;
 
-
-  {/* Edit */}
-  {!isEditing && (
-    <Button onClick={() => setIsEditing(true)}>
-      Edit
-    </Button>
-  )}
-
- {/* Save */}
-{isEditing && (
-  <Button
-    onClick={() => {
-      onUpdateTask({
-        ...task,
-        date: editedTask.date,
-        time: editedTask.time,
-      });
- toast.success('Task updated successfully'); 
-      setIsEditing(false);                        // exit edit mode
-      onClose();                                  // close task details
-    }}
-  >
-    Save
-  </Button>
-)}
-
-
-  {/* Close */}
-  <Button
-    variant="secondary"
-    onClick={onClose}
-    className="ml-auto"
-  >
-    Close
-  </Button>
-</div>
+                onUpdateTask({
+                  ...task,
+                  title: editedTask.title,
+                  description: finalDesc,
+                  date: editedTask.date,
+                  time: editedTask.time
+                });
+                toast.success('Task updated');
+                setIsEditing(false);
+                onClose();
+              }} className="bg-gradient-to-b from-[#e0b596]/90 to-[#c69472]/90 text-[#1f1f1f] shadow-[0_10px_20px_rgba(224,181,150,0.4),inset_0_1px_0_rgba(255,255,255,0.6)] border border-white/20 border-t-white/60 hover:brightness-110 hover:scale-[1.05] backdrop-blur-xl transition-all duration-300 rounded-xl">
+                Save Changes
+              </Button>
+            </>
+          )}
+        </div>
 
       </motion.div>
     </motion.div>
