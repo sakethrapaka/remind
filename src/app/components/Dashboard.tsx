@@ -38,7 +38,11 @@ import {
   Keyboard,
   Sun,
   Moon,
-  CheckCircle
+
+  CheckCircle,
+  Hourglass,
+  Check,
+  Edit2
 } from 'lucide-react';
 
 import { Task } from '@/app/types';
@@ -82,6 +86,7 @@ export function Dashboard({
   const [showSidebar, setShowSidebar] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showMiniCalendar, setShowMiniCalendar] = useState(false);
+  const [openInEditMode, setOpenInEditMode] = useState(false);
 
   // Teams-like Interaction State
   const containerRef = useRef<HTMLDivElement>(null);
@@ -344,52 +349,51 @@ export function Dashboard({
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-[#1f1f1f] text-gray-900 dark:text-gray-100 overflow-hidden font-sans selection:bg-[#e0b596]/30">
 
-      {/* Sidebar - Teams Style */}
-      <div className={`hidden lg:flex flex-col w-[68px] bg-white dark:bg-[#1b1b1b] border-r border-gray-200 dark:border-[#292929] items-center py-4 z-20`}>
-        <div className="mb-6">
+      {/* Sidebar - Teams Style (Updated) */}
+      <div className={`hidden lg:flex flex-col w-[68px] bg-white dark:bg-[#1b1b1b] border-r border-gray-200 dark:border-[#292929] items-center py-6 z-20`}>
+        <nav className="flex-1 w-full flex flex-col items-center gap-6">
           <button
-            onClick={() => setActiveView('home')}
-            className="h-10 w-10 bg-gradient-to-b from-[#e0b596]/90 to-[#c69472]/90 text-[#1f1f1f] shadow-[0_10px_20px_rgba(224,181,150,0.4),inset_0_1px_0_rgba(255,255,255,0.6)] border border-white/20 border-t-white/60 hover:brightness-110 hover:scale-[1.05] backdrop-blur-xl transition-all duration-300 rounded-xl flex items-center justify-center cursor-pointer"
+            onClick={() => {
+              setActiveView('home');
+              document.getElementById('dashboard-main')?.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className={`group relative p-3 rounded-xl transition-all ${activeView === 'home' && !document.getElementById('calendar-section')?.matches(':hover') ? 'bg-gray-100 dark:bg-[#292929] text-[#e0b596]' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#292929]/50'}`}
           >
-            <CalendarIcon className="w-5 h-5 text-[#1f1f1f]" />
-          </button>
-        </div>
-
-        <nav className="flex-1 w-full flex flex-col items-center gap-4">
-          <button onClick={() => setActiveView('home')} className={`group relative p-3 rounded-xl transition-all ${activeView === 'home' ? 'bg-gray-100 dark:bg-[#292929] text-[#e0b596]' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#292929]/50'}`}>
             <Home className="w-6 h-6" />
+            <span className="absolute left-14 bg-white dark:bg-black px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 whitespace-nowrap border border-gray-200 dark:border-[#333] shadow-md z-50 text-gray-900 dark:text-gray-100">Home</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveView('home');
+              setTimeout(() => document.getElementById('calendar-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+            }}
+            className="group relative p-3 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#292929]/50 transition-all"
+          >
+            <CalendarIcon className="w-6 h-6" />
             <span className="absolute left-14 bg-white dark:bg-black px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 whitespace-nowrap border border-gray-200 dark:border-[#333] shadow-md z-50 text-gray-900 dark:text-gray-100">Calendar</span>
           </button>
-          <button onClick={() => setCreateModal({ isOpen: true })} className="group relative p-3 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#292929]/50 transition-all">
-            <Plus className="w-6 h-6" />
-            <span className="absolute left-14 bg-white dark:bg-black px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 border border-gray-200 dark:border-[#333] shadow-md z-50 text-gray-900 dark:text-gray-100">New</span>
-          </button>
+
           <button onClick={() => setActiveView('pending')} className={`group relative p-3 rounded-xl transition-all ${activeView === 'pending' ? 'bg-gray-100 dark:bg-[#292929] text-[#e0b596]' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#292929]/50'}`}>
-            <Clock className="w-6 h-6" />
+            <Hourglass className="w-6 h-6" />
             <span className="absolute left-14 bg-white dark:bg-black px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 whitespace-nowrap border border-gray-200 dark:border-[#333] shadow-md z-50 text-gray-900 dark:text-gray-100">Pending</span>
           </button>
 
           <button onClick={() => setActiveView('completed')} className={`group relative p-3 rounded-xl transition-all ${activeView === 'completed' ? 'bg-gray-100 dark:bg-[#292929] text-[#e0b596]' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#292929]/50'}`}>
-            <CheckCircle className="w-6 h-6" />
+            <Check className="w-6 h-6" />
             <span className="absolute left-14 bg-white dark:bg-black px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 whitespace-nowrap border border-gray-200 dark:border-[#333] shadow-md z-50 text-gray-900 dark:text-gray-100">Completed</span>
           </button>
 
-          <button onClick={() => setActiveView('locations')} className={`group relative p-3 rounded-xl transition-all ${activeView === 'locations' ? 'bg-gray-100 dark:bg-[#292929] text-[#e0b596]' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#292929]/50'}`}>
-            <MapPin className="w-6 h-6" />
-          </button>
-
-          <div className="w-8 h-[1px] bg-gray-200 dark:bg-[#292929] my-2"></div>
-
-          <button onClick={toggleTheme} className="group relative p-3 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#292929]/50 transition-all">
-            {theme === 'dark' ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
-          </button>
+          <div className="mt-auto flex flex-col items-center gap-4 mb-4">
+            <button onClick={toggleTheme} className="group relative p-3 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#292929]/50 transition-all">
+              {theme === 'dark' ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
+              <span className="absolute left-14 bg-white dark:bg-black px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 whitespace-nowrap border border-gray-200 dark:border-[#333] shadow-md z-50 text-gray-900 dark:text-gray-100">Theme</span>
+            </button>
+            <button onClick={() => setShowSettings(true)} className="p-3 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+              <Settings className="w-6 h-6" />
+            </button>
+          </div>
         </nav>
-
-        <div className="mt-auto">
-          <button onClick={() => setShowSettings(true)} className="p-3 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-            <Settings className="w-6 h-6" />
-          </button>
-        </div>
       </div>
 
       {/* Main Content */}
@@ -506,255 +510,153 @@ export function Dashboard({
           )}
         </AnimatePresence>
 
-        {/* Calendar Grid Area */}
+        {/* Home Dashboard Layout */}
         {activeView === 'home' ? (
-          <div className="flex-1 flex flex-col overflow-hidden relative">
-            {/* Days Header */}
-            <div className="grid grid-cols-[60px_1fr] border-b border-gray-200 dark:border-[#292929] bg-white dark:bg-[#1f1f1f]">
-              <div className="border-r border-gray-200 dark:border-[#292929]"></div>
-              <div className="grid grid-cols-7">
-                {weekDays.map((date, i) => (
-                  <div key={i} className={`py-2 text-center border-r border-gray-200 dark:border-[#292929] ${isToday(date) ? 'bg-indigo-50 dark:bg-[#25252b]' : ''}`}>
-                    <p className={`text-[11px] font-medium uppercase tracking-wider mb-0.5 ${isToday(date) ? 'text-[#e0b596] dark:text-[#e0b596]' : 'text-gray-500'}`}>
-                      {format(date, 'EEE')}
-                    </p>
-                    <div className={`flex items-center justify-center w-7 h-7 rounded-full mx-auto ${isToday(date) ? 'bg-[#e0b596] text-[#1f1f1f]' : 'text-gray-500 dark:text-gray-300'}`}>
-                      <span className="text-sm font-bold">{format(date, 'd')}</span>
-                    </div>
-                  </div>
-                ))}
+          <div id="dashboard-main" className="flex-1 h-full overflow-y-auto bg-gray-50 dark:bg-[#1f1f1f]">
+            <div className="p-6 lg:p-10 max-w-[1600px] mx-auto space-y-10">
+
+              {/* Dashboard Header */}
+              <div className="flex flex-col gap-2">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+                  {new Date().getHours() < 12 ? 'Good Morning' : new Date().getHours() < 18 ? 'Good Afternoon' : 'Good Evening'}, {userName}
+                </h1>
+                <p className="text-gray-500 dark:text-gray-400 text-lg">Here's your schedule and tasks for today.</p>
               </div>
-            </div>
 
-            {/* Timeline Grid */}
-            <div ref={containerRef} className="flex-1 bg-white dark:bg-[#1f1f1f] relative overflow-y-auto custom-scrollbar">
-              <div
-                className="grid grid-cols-[60px_1fr] h-[1440px] relative select-none"
-                onMouseDown={handleMouseDown}
-              >
-                {/* Time Labels */}
-                <div className="border-r border-gray-200 dark:border-[#292929] bg-white dark:bg-[#1f1f1f] z-10 sticky left-0 h-full w-[60px] pointer-events-none relative">
-                  {Array.from({ length: 24 }).map((_, hour) => (
-                    <div
-                      key={hour}
-                      className="absolute w-full text-right pr-2 -translate-y-1/2"
-                      style={{ top: hour * 60 }}
-                    >
-                      <span className="text-[11px] text-gray-500 block pt-1">
-                        {format(setHours(startOfDay(new Date()), hour), 'h a')}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+              {/* Landscape Calendar Section - Dense & Compact */}
+              <div id="calendar-section" className="w-full bg-white dark:bg-[#1f1f1f] rounded-xl border border-gray-200 dark:border-[#333] shadow-sm py-4 px-4 flex flex-col justify-center">
+                <DayPicker
+                  mode="single"
+                  selected={currentDate}
+                  onSelect={(date) => date && setCurrentDate(date)}
+                  modifiers={{
+                    today: new Date()
+                  }}
+                  modifiersStyles={{
+                    today: { color: '#e0b596', fontWeight: 'bold' },
+                    selected: { backgroundColor: '#e0b596', color: 'white', fontWeight: '600' }
+                  }}
+                  styles={{
+                    root: { width: '100%' },
+                    months: { width: '100%' },
+                    table: { width: '100%', maxWidth: 'none', borderSpacing: '0', tableLayout: 'fixed' },
+                    head_row: { width: '100%' },
+                    head_cell: { color: theme === 'dark' ? '#9ca3af' : '#6b7280', fontSize: '0.8rem', fontWeight: '600', paddingBottom: '0.25rem', textAlign: 'center' },
+                    row: { width: '100%' },
+                    cell: { padding: '0.1rem 0', textAlign: 'center' },
+                    day: { margin: '0 auto', width: '100%', maxWidth: '3rem', height: '2.25rem', borderRadius: '0.5rem', fontSize: '0.9rem' },
+                    caption: { color: theme === 'dark' ? '#f5f5f5' : '#111827', marginBottom: '0.5rem', fontSize: '1rem', textTransform: 'capitalize', paddingLeft: '0.5rem' },
+                    nav_button: { color: theme === 'dark' ? '#f5f5f5' : '#111827', width: '1.75rem', height: '1.75rem' },
+                    nav_icon: { width: '1rem', height: '1rem' }
+                  }}
+                  className="custom-day-picker"
+                />
+              </div>
 
-                {/* Day Columns BG */}
-                <div className="grid grid-cols-7 relative h-full">
-                  {/* Horizontal Grid lines */}
-                  {Array.from({ length: 24 }).map((_, hour) => (
-                    <div key={`line-${hour}`} className="absolute w-full border-b border-gray-100 dark:border-[#292929] h-[60px]" style={{ top: hour * 60 }} />
-                  ))}
+              {/* Selected Day Reminders Section */}
+              <div className="space-y-6">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                  {isToday(currentDate) ? "Today's" : format(currentDate, 'MMMM d')} Reminders
+                </h2>
+                <div className="w-full">
+                  <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-[#333] shadow-sm bg-white dark:bg-[#1f1f1f]">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-gray-50/50 dark:bg-[#292929]/50 border-b border-gray-200 dark:border-[#333]">
+                          <th className="py-4 px-6 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-[25%]">Task Name</th>
+                          <th className="py-4 px-6 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-[35%]">Description</th>
+                          <th className="py-4 px-6 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-[15%]">Status</th>
+                          <th className="py-4 px-6 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-[10%] text-center">Edit</th>
+                          <th className="py-4 px-6 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-[10%] text-center">Delete</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 dark:divide-[#333]">
+                        {tasks.filter(t => t.date === format(currentDate, 'yyyy-MM-dd') && !t.completed).length > 0 ? (
+                          tasks.filter(t => t.date === format(currentDate, 'yyyy-MM-dd') && !t.completed)
+                            .sort((a, b) => a.time!.localeCompare(b.time!))
+                            .map(task => {
+                              // Determine Status
+                              const isOverdue = !task.completed && new Date(`${task.date}T${task.time}`) < new Date();
+                              const status = task.completed ? 'Completed' : isOverdue ? 'Overdue' : 'Pending';
+                              const statusColor = task.completed ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                                isOverdue ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                                  'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
 
-                  {/* Vertical separators */}
-                  {Array.from({ length: 7 }).map((_, i) => (
-                    <div key={`col-${i}`} className="border-r border-gray-200 dark:border-[#292929] h-full pointer-events-none" />
-                  ))}
+                              return (
+                                <tr key={task.id} className="group hover:bg-gray-50 dark:hover:bg-[#292929]/50 transition-colors">
+                                  {/* Task Name & Time */}
+                                  <td className="py-4 px-6 align-top">
+                                    <div className="flex flex-col">
+                                      <span className="font-semibold text-gray-900 dark:text-white group-hover:text-[#e0b596] transition-colors cursor-pointer" onClick={() => { setOpenInEditMode(false); setSelectedTask(task); }}>
+                                        {task.title}
+                                      </span>
+                                      <div className="flex items-center gap-1.5 mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                        <Clock className="w-3 h-3" />
+                                        {task.time}
+                                      </div>
+                                    </div>
+                                  </td>
 
-                  {/* Current Time Indicator */}
-                  {isSameDay(new Date(), currentDate) && (() => { // Simple check if current week roughly
-                    // Actually need to check if today is in weekDays
-                    const todayIndex = weekDays.findIndex(d => isSameDay(d, new Date()));
-                    if (todayIndex !== -1) {
-                      const now = new Date();
-                      const minutes = now.getHours() * 60 + now.getMinutes();
-                      const top = (minutes / 60) * HOUR_HEIGHT;
-                      return (
-                        <div
-                          style={{ top }}
-                          className="absolute w-full flex items-center z-40 pointer-events-none"
-                        >
-                          <div className="w-full h-[2px] bg-[#f06a6a] relative">
-                            <div className="absolute -left-[60px] text-[10px] font-bold text-[#f06a6a] bg-white dark:bg-[#1f1f1f] px-1 -top-2">
-                              {format(now, 'h:mm a')}
-                            </div>
-                            <div className="absolute -left-1.5 -top-1.5 w-3 h-3 rounded-full bg-[#f06a6a]" />
-                          </div>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
+                                  {/* Description */}
+                                  <td className="py-4 px-6 align-top">
+                                    <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
+                                      {task.description ? task.description.replace(/<!-- metadata: .*? -->/g, '').trim() || '-' : '-'}
+                                    </p>
+                                  </td>
 
-                  {/* --- EVENTS LAYOUT --- */}
-                  <div className="absolute inset-0 pointer-events-none">
-                    {weekDays.map((dayDate, dayIdx) => {
-                      // Filter processed events for this day
-                      // The processedEvents array has everything, we need to locate them
-                      // We can just iterate processedEvents directly and render if matches date
-                      return null;
-                    })}
+                                  {/* Status */}
+                                  <td className="py-4 px-6 align-top">
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}`}>
+                                      {status}
+                                    </span>
+                                  </td>
+
+                                  {/* Edit */}
+                                  <td className="py-4 px-6 align-top text-center">
+                                    <button
+                                      onClick={() => {
+                                        setOpenInEditMode(true);
+                                        setSelectedTask(task);
+                                      }}
+                                      className="p-2 text-gray-400 hover:text-[#e0b596] hover:bg-[#e0b596]/10 rounded-lg transition-all"
+                                      title="Edit Task"
+                                    >
+                                      <Edit2 className="w-4 h-4" />
+                                    </button>
+                                  </td>
+
+                                  {/* Delete */}
+                                  <td className="py-4 px-6 align-top text-center">
+                                    <button
+                                      onClick={() => {
+                                        if (window.confirm('Are you sure you want to delete this reminder?')) {
+                                          onDeleteTask(task.id);
+                                          toast.success('Reminder deleted');
+                                        }
+                                      }}
+                                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
+                                      title="Delete Task"
+                                    >
+                                      <X className="w-4 h-4" />
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })
+                        ) : (
+                          <tr>
+                            <td colSpan={5} className="py-12 text-center text-gray-500 dark:text-gray-400">
+                              No reminders found for {isToday(currentDate) ? 'today' : format(currentDate, 'MMMM d')}.
+                              <br />
+                              <button onClick={() => setCreateModal({ isOpen: true, date: format(currentDate, 'yyyy-MM-dd') })} className="mt-2 text-[#e0b596] hover:underline text-sm font-medium">Create New Reminder</button>
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
                   </div>
-
-                  {/* Render All Events (absolute to grid container relative to cols not needed if we calculate left %) */}
-                  <AnimatePresence>
-                    {eventsForGrid.map((event) => {
-                      // We need to shift 'left' based on Day Index
-                      // event.style.left is relative to Day Column.
-                      // Total width is 100%. Day width is 100/7 %.
-                      // Absolute Left = (DayIndex * (100/7)) + (LocalLeft * (100/7))
-                      const dayObj = parseISO(event.date); // or use differenceInDays
-                      // Find which day column (0-6)
-                      const colIdx = weekDays.findIndex(d => isSameDay(d, parseISO(event.date)));
-                      if (colIdx === -1) return null; // Event not in this week view
-
-                      const colWidth = 100 / 7;
-                      const leftOffset = colIdx * colWidth;
-                      const localLeft = parseFloat(event.style.left); // Percentage string
-                      const localWidth = parseFloat(event.style.width);
-
-                      const finalLeft = leftOffset + (localLeft * (colWidth / 100));
-                      const finalWidth = localWidth * (colWidth / 100);
-
-                      // Check if this event is being dragged (Ghost)
-                      if (activeTaskId === event.id && (dragMode === 'move' || dragMode === 'resize')) return null;
-
-                      return (
-                        <motion.div
-                          key={event.id}
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          style={{
-                            top: event.style.top,
-                            height: event.style.height,
-                            left: `${finalLeft}%`,
-                            width: `${finalWidth}%`,
-                            position: 'absolute'
-                          }}
-                          onMouseDown={(e) => {
-                            e.stopPropagation();
-                            const [h, m] = event.time.split(':').map(Number);
-                            const startMins = h * 60 + m;
-                            setDragStart({ x: e.clientX, y: e.clientY, time: startMins, dayIndex: colIdx });
-                            setDragCurrent({ x: e.clientX, y: e.clientY, time: startMins, dayIndex: colIdx });
-                            setActiveTaskId(event.id);
-                            setDragMode('move');
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (dragMode === 'none') setSelectedTask(event);
-                          }}
-                          className="pointer-events-auto z-10 group absolute rounded-[4px] px-2 py-1 cursor-pointer 
-                                                       bg-[#e0b596]/20 dark:bg-[#e0b596]/30 border-l-[3px] border-[#e0b596] hover:bg-[#e0b596]/30 dark:hover:bg-[#e0b596]/40 hover:z-20
-                                                       text-gray-700 dark:text-[#f0dccc] text-xs transition-colors overflow-hidden"
-                        >
-                          <div className="font-semibold leading-tight truncate">{event.title}</div>
-                          <div className="text-[10px] opacity-80 truncate">
-                            {event.time} - {format(addMinutes(parseISO(`${event.date}T${event.time}`), event.duration), 'HH:mm')}
-                          </div>
-
-                          {/* Resize Handle */}
-                          <div
-                            className="absolute bottom-0 left-0 w-full h-1.5 cursor-s-resize opacity-0 group-hover:opacity-100 bg-[#e0b596]/50"
-                            onMouseDown={(e) => {
-                              e.stopPropagation();
-                              const [h, m] = event.time.split(':').map(Number);
-                              const startMins = h * 60 + m;
-                              const endMins = startMins + event.duration;
-
-                              setDragStart({ x: e.clientX, y: e.clientY, time: startMins, dayIndex: colIdx });
-                              setDragCurrent({ x: e.clientX, y: e.clientY, time: endMins, dayIndex: colIdx }); // Dragging END time
-                              setActiveTaskId(event.id);
-                              setDragMode('resize');
-                            }}
-                          />
-                        </motion.div>
-                      );
-                    })}
-                  </AnimatePresence>
-
-                  {/* --- DRAFT / GHOST EVENTS --- */}
-                  {dragMode === 'create' && dragStart && dragCurrent && (
-                    <div
-                      className="absolute bg-[#e0b596]/30 border-2 border-[#e0b596] rounded z-20 pointer-events-none"
-                      style={{
-                        left: `${(dragStart.dayIndex / 7) * 100}%`,
-                        width: `${100 / 7}%`,
-                        top: Math.min(dragStart.y, dragCurrent.y) - 5, // Simple visual fix, roughly
-                        // Better: calculate directly from time
-                        // We have dragStart.time and dragCurrent.time in minutes
-                      }}
-                    >
-                      {(() => {
-                        const startMin = Math.min(dragStart.time, dragCurrent.time);
-                        const endMin = Math.max(dragStart.time, dragCurrent.time);
-                        // Ensure min height
-                        const dur = Math.max(SNAP_MINUTES, endMin - startMin + (dragStart.time === dragCurrent.time ? 30 : 0));
-
-                        return (
-                          <div
-                            style={{
-                              position: 'absolute',
-                              top: (startMin / 60) * HOUR_HEIGHT,
-                              height: (dur / 60) * HOUR_HEIGHT,
-                              left: 0,
-                              right: 0
-                            }}
-                            className="bg-[#e0b596] opacity-50 rounded pl-2 pt-1 text-xs text-white"
-                          >
-                            {format(setMinutes(setHours(new Date(), 0), startMin), 'HH:mm')} - {format(setMinutes(setHours(new Date(), 0), startMin + dur), 'HH:mm')}
-                            <div className="font-bold">(No title)</div>
-                          </div>
-                        )
-                      })()}
-                    </div>
-                  )}
-
-                  {/* --- DRAGGING GHOST (MOVE) --- */}
-                  {(dragMode === 'move') && activeTaskId && dragCurrent && dragStart && (
-                    <div
-                      className="absolute bg-[#e0b596] opacity-80 rounded z-30 pointer-events-none shadow-xl pl-2 pt-1 text-xs text-white"
-                      style={{
-                        left: `${(dragCurrent.dayIndex / 7) * 100}%`,
-                        width: `${100 / 7}%`,
-                        top: (((dragCurrent.time - (dragStart.time % 60 ? 0 : 0)) / 60) * HOUR_HEIGHT), // simplified, really should use offset
-                        // Let's rely on relative movement
-                        // New Top = Original Top + (CurrentY - StartY)
-                        // But we want snapping.
-                        // Best is to use the Snap Calculation: 
-                        // Start Time of dragged event = Original Start + (CurrentTime - StartDragTime)
-                        // Wait, dragCurrent.time IS the current snapped time under cursor.
-                        // So we need to calculate 'Offset from cursor to event start'
-                        // Assume cursor grabbed middle? No, we handle top-left usually for simplicity or keep offset.
-                      }}
-                    >
-                      {(() => {
-                        const task = tasks.find(t => t.id === activeTaskId);
-                        if (!task) return null;
-                        const duration = task.duration || 60;
-                        // Delta Time
-                        const deltaMinutes = dragCurrent.time - dragStart.time;
-                        const [h, m] = task.time!.split(':').map(Number);
-                        const oldStart = h * 60 + m;
-                        const newStart = oldStart + deltaMinutes;
-
-                        return (
-                          <div style={{
-                            position: 'absolute',
-                            top: (newStart / 60) * HOUR_HEIGHT,
-                            height: (duration / 60) * HOUR_HEIGHT,
-                            left: 0,
-                            right: 0,
-                            background: '#e0b596',
-                            borderRadius: 4
-                          }}>
-                            <span className="font-bold p-1 block">{task.title}</span>
-                            <span className="p-1">{format(setMinutes(setHours(new Date(), 0), newStart), 'HH:mm')}</span>
-                          </div>
-                        )
-                      })()}
-                    </div>
-                  )}
-
                 </div>
+
               </div>
             </div>
           </div>
@@ -816,7 +718,6 @@ export function Dashboard({
             )}
           </div>
         )}
-
       </div>
 
       {/* Render Modals */}
@@ -841,7 +742,8 @@ export function Dashboard({
         {selectedTask && (
           <TaskDetails
             task={selectedTask}
-            onClose={() => setSelectedTask(null)}
+            initialEditMode={openInEditMode}
+            onClose={() => { setSelectedTask(null); setOpenInEditMode(false); }}
             // Pass handlers...
             onToggleComplete={onToggleComplete}
             onDeleteTask={onDeleteTask}

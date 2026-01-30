@@ -12,10 +12,9 @@ interface TaskDetailsProps {
   onClose: () => void;
   onToggleComplete: (id: string) => void;
   onDeleteTask: (id: string) => void;
-  onUpdateTask: (task: Task) => void; // ✅ ADD THIS
+  onUpdateTask: (task: Task) => void;
+  initialEditMode?: boolean; // Added prop
 }
-
-
 
 export function TaskDetails({
   task,
@@ -23,10 +22,10 @@ export function TaskDetails({
   onToggleComplete,
   onDeleteTask,
   onUpdateTask,
+  initialEditMode = false, // Default to false
 }: TaskDetailsProps) {
 
-  // ✅ ADD HERE (JUST BELOW FUNCTION START)
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(initialEditMode);
 
   const [editedTask, setEditedTask] = useState({
     title: task.title,
