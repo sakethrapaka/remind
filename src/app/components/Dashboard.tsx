@@ -49,6 +49,7 @@ import { Task } from '@/app/types';
 import { TaskDetails } from '@/app/components/TaskDetails';
 import { SettingsPanel } from '@/app/components/SettingsPanel';
 import { CreateReminder } from '@/app/components/CreateReminder';
+import { festivals } from '@/app/data/festivals';
 import { ProfileMenu } from '@/app/components/ProfileMenu';
 import { NearbyLocations } from '@/app/components/NearbyLocations';
 import { toast } from 'sonner';
@@ -103,6 +104,10 @@ export function Dashboard({
   // Derived Dates
   const startDate = startOfWeek(currentDate, { weekStartsOn: 1 }); // Monday start
   const weekDays = useMemo(() => Array.from({ length: 7 }).map((_, i) => addDays(startDate, i)), [startDate]);
+
+  // Festivals
+  const festivalDays = useMemo(() => festivals.map(f => parseISO(f.date)), []);
+  const activeFestival = useMemo(() => festivals.find(f => f.date === format(currentDate, 'yyyy-MM-dd')), [currentDate]);
 
   // --- Helpers ---
 
@@ -529,12 +534,14 @@ export function Dashboard({
                   mode="single"
                   selected={currentDate}
                   onSelect={(date) => date && setCurrentDate(date)}
-                  modifiers={{
-                    today: new Date()
-                  }}
                   modifiersStyles={{
                     today: { color: '#e0b596', fontWeight: 'bold' },
-                    selected: { backgroundColor: '#e0b596', color: 'white', fontWeight: '600' }
+                    selected: { backgroundColor: '#e0b596', color: 'white', fontWeight: '600' },
+                    festival: { color: '#ef4444', fontWeight: 'bold' }
+                  }}
+                  modifiers={{
+                    today: new Date(),
+                    festival: festivalDays
                   }}
                   styles={{
                     root: { width: '100%' },
@@ -558,6 +565,19 @@ export function Dashboard({
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
                   {isToday(currentDate) ? "Today's" : format(currentDate, 'MMMM d')} Reminders
                 </h2>
+
+                {/* Festival Banner */}
+                {activeFestival && (
+                  <div className="bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 border border-red-100 dark:border-red-900/30 rounded-xl p-4 flex items-center gap-4">
+                    <div className="p-3 bg-white dark:bg-red-900/30 rounded-full shadow-sm">
+                      <span className="text-2xl">🎉</span>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-red-700 dark:text-red-400">{activeFestival.name}</h3>
+                      <p className="text-sm text-red-600/80 dark:text-red-400/70">Enjoy the festivities!</p>
+                    </div>
+                  </div>
+                )}
                 <div className="w-full">
                   <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-[#333] shadow-sm bg-white dark:bg-[#1f1f1f]">
                     <table className="w-full text-left border-collapse">
@@ -722,6 +742,91 @@ export function Dashboard({
 
       {/* Render Modals */}
       <AnimatePresence>
+        {/* Mobile Sidebar Overlay */}
+        {showSidebar && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowSidebar(false)}
+              className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+            />
+            <motion.div
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed inset-y-0 left-0 z-50 w-72 bg-white dark:bg-[#1b1b1b] shadow-2xl p-6 lg:hidden flex flex-col border-r border-gray-200 dark:border-[#292929]"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Menu</h2>
+                <button
+                  onClick={() => setShowSidebar(false)}
+                  className="p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-[#292929] rounded-lg transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <nav className="flex flex-col gap-2 space-y-1">
+                <button
+                  onClick={() => { setActiveView('home'); setShowSidebar(false); }}
+                  className={`flex items-center gap-4 p-3 rounded-xl transition-all ${activeView === 'home' ? 'bg-gray-100 dark:bg-[#292929] text-[#e0b596] font-medium' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#292929]/50'}`}
+                >
+                  <Home className="w-5 h-5" />
+                  <span>Home</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveView('home');
+                    setShowSidebar(false);
+                    setTimeout(() => document.getElementById('calendar-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+                  }}
+                  className="flex items-center gap-4 p-3 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#292929]/50 transition-all"
+                >
+                  <CalendarIcon className="w-5 h-5" />
+                  <span>Calendar</span>
+                </button>
+
+                <button
+                  onClick={() => { setActiveView('pending'); setShowSidebar(false); }}
+                  className={`flex items-center gap-4 p-3 rounded-xl transition-all ${activeView === 'pending' ? 'bg-gray-100 dark:bg-[#292929] text-[#e0b596] font-medium' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#292929]/50'}`}
+                >
+                  <Hourglass className="w-5 h-5" />
+                  <span>Pending Tasks</span>
+                </button>
+
+                <button
+                  onClick={() => { setActiveView('completed'); setShowSidebar(false); }}
+                  className={`flex items-center gap-4 p-3 rounded-xl transition-all ${activeView === 'completed' ? 'bg-gray-100 dark:bg-[#292929] text-[#e0b596] font-medium' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#292929]/50'}`}
+                >
+                  <Check className="w-5 h-5" />
+                  <span>Completed</span>
+                </button>
+              </nav>
+
+              <div className="mt-auto border-t border-gray-100 dark:border-[#292929] pt-6 space-y-2">
+                <button
+                  onClick={() => { toggleTheme(); }}
+                  className="w-full flex items-center gap-4 p-3 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#292929]/50 transition-all"
+                >
+                  {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                  <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+                </button>
+
+                <button
+                  onClick={() => { setShowSettings(true); setShowSidebar(false); }}
+                  className="w-full flex items-center gap-4 p-3 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#292929]/50 transition-all"
+                >
+                  <Settings className="w-5 h-5" />
+                  <span>Settings</span>
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
         {createModal.isOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-2xl h-[80vh]">

@@ -33,3 +33,9 @@ export interface NearbyLocation {
   rating: number;
   isOpen: boolean;
 }
+
+export interface Festival {
+  date: string; // YYYY-MM-DD
+  name: string;
+  type: 'public' | 'religious' | 'seasonal' | 'other';
+}
