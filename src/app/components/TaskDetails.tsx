@@ -1,7 +1,8 @@
 import { motion } from 'motion/react';
+import { format, parse } from 'date-fns';
 import { Button } from '@/app/components/ui/button';
 import { Badge } from '@/app/components/ui/badge';
-import { X, Calendar, Clock, Tag, MapPin, Navigation } from 'lucide-react';
+import { X, Calendar, Clock, Tag, MapPin, Navigation, Sparkles } from 'lucide-react';
 import { Task } from '@/app/types';
 import { getNearbyLocations } from '@/app/utils/mockData';
 import { useState } from 'react';
@@ -50,6 +51,8 @@ export function TaskDetails({
     return null;
   })();
 
+  const [isSpecial, setIsSpecial] = useState(parsedMetadata?.isSpecial || false);
+
   // Clean description without metadata
   const cleanDescription = task.description ? task.description.replace(/<!-- metadata: .+ -->/, '').trim() : '';
 
@@ -82,15 +85,39 @@ export function TaskDetails({
               {parsedMetadata?.priority && (
                 <span className="text-xs uppercase tracking-wider font-semibold text-gray-500">{parsedMetadata.priority} Priority</span>
               )}
+              {/* Specials Badge */}
+              {isSpecial && !isEditing && (
+                <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-none px-2 py-0.5 ml-2 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" />
+                  Special
+                </Badge>
+              )}
             </div>
 
             {isEditing ? (
-              <input
-                autoFocus
-                value={editedTask.title}
-                onChange={(e) => setEditedTask({ ...editedTask, title: e.target.value })}
-                className="text-2xl font-bold bg-transparent border-b border-[#e0b596] text-gray-900 dark:text-white w-full focus:outline-none placeholder-gray-400"
-              />
+              <div className="space-y-4">
+                <input
+                  autoFocus
+                  value={editedTask.title}
+                  onChange={(e) => setEditedTask({ ...editedTask, title: e.target.value })}
+                  className="text-2xl font-bold bg-transparent border-b border-[#e0b596] text-gray-900 dark:text-white w-full focus:outline-none placeholder-gray-400"
+                />
+
+                {/* Specials Toggle */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="editIsSpecial"
+                    checked={isSpecial}
+                    onChange={(e) => setIsSpecial(e.target.checked)}
+                    className="w-4 h-4 rounded border-gray-400 dark:border-gray-600 bg-gray-100 dark:bg-[#292929] text-[#e0b596] focus:ring-[#e0b596]"
+                  />
+                  <label htmlFor="editIsSpecial" className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5 text-orange-400" />
+                    Mark as Special
+                  </label>
+                </div>
+              </div>
             ) : (
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white leading-tight">{task.title}</h2>
             )}
@@ -151,7 +178,9 @@ export function TaskDetails({
                   className="bg-transparent text-sm font-semibold w-full text-gray-900 dark:text-white"
                 />
               ) : (
-                <div className="font-semibold text-gray-900 dark:text-white">{task.time}</div>
+                <div className="font-semibold text-gray-900 dark:text-white">
+                  {task.time ? format(parse(task.time, 'HH:mm', new Date()), 'h:mm a') : '--:--'}
+                </div>
               )}
             </div>
 
@@ -246,7 +275,8 @@ export function TaskDetails({
             <>
               <Button variant="ghost" onClick={() => setIsEditing(false)}>Cancel</Button>
               <Button onClick={() => {
-                const metaString = parsedMetadata ? `<!-- metadata: ${JSON.stringify(parsedMetadata)} -->` : '';
+                const newMeta = { ...(parsedMetadata || {}), isSpecial, specialType: isSpecial ? (parsedMetadata?.specialType || 'other') : undefined };
+                const metaString = `<!-- metadata: ${JSON.stringify(newMeta)} -->`;
                 const finalDesc = `${editedTask.description} ${metaString}`;
 
                 onUpdateTask({

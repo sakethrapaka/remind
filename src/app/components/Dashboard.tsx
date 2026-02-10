@@ -14,7 +14,8 @@ import {
   setHours,
   setMinutes,
   isSameDay,
-  parseISO
+  parseISO,
+  parse
 } from 'date-fns';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
@@ -42,7 +43,9 @@ import {
   CheckCircle,
   Hourglass,
   Check,
-  Edit2
+  Edit2,
+  Sparkles,
+  Gift
 } from 'lucide-react';
 
 import { Task } from '@/app/types';
@@ -63,7 +66,7 @@ interface DashboardProps {
   onUpdateTask: (task: Task) => void;
 }
 
-type View = 'home' | 'locations' | 'settings' | 'pending' | 'completed';
+type View = 'home' | 'locations' | 'settings' | 'pending' | 'completed' | 'specials' | 'calendar';
 type DragMode = 'none' | 'create' | 'move' | 'resize';
 
 // Constants
@@ -102,12 +105,54 @@ export function Dashboard({
   });
 
   // Derived Dates
-  const startDate = startOfWeek(currentDate, { weekStartsOn: 1 }); // Monday start
-  const weekDays = useMemo(() => Array.from({ length: 7 }).map((_, i) => addDays(startDate, i)), [startDate]);
+  // Derived Dates
+  const [calendarView, setCalendarView] = useState<'day' | 'week' | 'workWeek'>('week');
+
+  const calendarDays = useMemo(() => {
+    if (calendarView === 'day') return [currentDate];
+    const start = startOfWeek(currentDate, { weekStartsOn: 1 });
+    if (calendarView === 'workWeek') return Array.from({ length: 5 }).map((_, i) => addDays(start, i));
+    return Array.from({ length: 7 }).map((_, i) => addDays(start, i));
+  }, [currentDate, calendarView]);
+
+  // Keep legacy name for other internals if needed
+  const weekDays = calendarDays;
+  const startDate = calendarDays[0];
 
   // Festivals
-  const festivalDays = useMemo(() => festivals.map(f => parseISO(f.date)), []);
-  const activeFestival = useMemo(() => festivals.find(f => f.date === format(currentDate, 'yyyy-MM-dd')), [currentDate]);
+  // Festivals & Specials
+  const mockSpecials = useMemo(() => [
+    { date: format(new Date(), 'yyyy-MM-dd'), name: "Team Lunch", type: 'cultural' },
+    { date: '2026-02-15', name: "Project Deadline", type: 'other' },
+    { date: '2026-02-28', name: "Office Anniversary", type: 'anniversary' }
+  ], []);
+
+  const userSpecials = useMemo(() => {
+    return tasks
+      .map(task => {
+        const desc = task.description || '';
+        const match = desc.match(/<!-- metadata: (.+) -->/);
+        if (match) {
+          try {
+            const meta = JSON.parse(match[1]);
+            if (meta.isSpecial) {
+              return {
+                date: task.date,
+                name: task.title,
+                type: (meta.specialType || 'other') as any // Cast to match Festival type if needed
+              };
+            }
+          } catch (e) { }
+        }
+        return null;
+      })
+      .filter(item => item !== null);
+  }, [tasks]);
+
+  const allSpecials = useMemo(() => [...festivals, ...mockSpecials, ...userSpecials], [mockSpecials, userSpecials]);
+  const festivalDays = useMemo(() => allSpecials.map(f => parseISO(f.date)), [allSpecials]);
+  const activeFestival = useMemo(() => allSpecials.find(f => f.date === format(currentDate, 'yyyy-MM-dd')), [currentDate, allSpecials]);
+  const specialsForDate = useMemo(() => allSpecials.filter(s => s.date === format(currentDate, 'yyyy-MM-dd')), [currentDate, allSpecials]);
 
   // --- Helpers ---
 
@@ -115,8 +160,8 @@ export function Dashboard({
     return Math.floor((y / HOUR_HEIGHT) * 60);
   };
 
-  const getDayIndexFromX = (x: number, width: number) => {
-    return Math.min(6, Math.max(0, Math.floor(x / (width / 7))));
+  const getDayIndexFromX = (x: number, width: number, daysCount = 7) => {
+    return Math.min(daysCount - 1, Math.max(0, Math.floor(x / (width / daysCount))));
   };
 
   const snapToGrid = (minutes: number) => {
@@ -126,14 +171,14 @@ export function Dashboard({
   // --- Interaction Handlers ---
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (activeView !== 'home' || !containerRef.current) return;
+    if ((activeView !== 'home' && activeView !== 'calendar') || !containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left - 60; // Offset for time column
     const y = e.clientY - rect.top + containerRef.current.scrollTop; // Adjust for scroll
 
     if (x < 0) return; // Clicked on time column
 
-    const dayIndex = getDayIndexFromX(x, rect.width - 60);
+    const dayIndex = getDayIndexFromX(x, rect.width - 60, weekDays.length);
     const time = getMinutesFromY(y);
 
     setDragStart({ x, y, time: snapToGrid(time), dayIndex });
@@ -150,10 +195,10 @@ export function Dashboard({
     const x = e.clientX - rect.left - 60;
 
     const time = getMinutesFromY(y);
-    const dayIndex = getDayIndexFromX(x, rect.width - 60);
+    const dayIndex = getDayIndexFromX(x, rect.width - 60, weekDays.length);
 
     setDragCurrent({ x, y, time: snapToGrid(time), dayIndex });
-  }, [dragMode, dragStart]);
+  }, [dragMode, dragStart, weekDays]);
 
   const handleMouseUp = useCallback(() => {
     if (dragMode === 'create' && dragStart && dragCurrent) {
@@ -327,14 +372,21 @@ export function Dashboard({
 
       const totalCols = columns.length;
 
+      // Calculate day index for horizontal positioning
+      const dayIndex = weekDays.findIndex(d => format(d, 'yyyy-MM-dd') === dateKey);
+      if (dayIndex === -1) return;
+
+      const dayWidthPercent = 100 / weekDays.length;
+      const dayLeftPercent = dayIndex * dayWidthPercent;
+
       slots.forEach(event => {
         processedEvents.push({
           ...event,
           style: {
             top: (event.start / 60) * HOUR_HEIGHT,
             height: (event.duration / 60) * HOUR_HEIGHT,
-            left: `${(event.colIndex / totalCols) * 100}%`,
-            width: `${(1 / totalCols) * 100}%`,
+            left: `${dayLeftPercent + (event.colIndex / totalCols) * dayWidthPercent}%`,
+            width: `${(1 / totalCols) * dayWidthPercent}%`,
             position: 'absolute'
           }
         });
@@ -370,13 +422,20 @@ export function Dashboard({
 
           <button
             onClick={() => {
-              setActiveView('home');
-              setTimeout(() => document.getElementById('calendar-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+              setActiveView('calendar');
             }}
-            className="group relative p-3 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#292929]/50 transition-all"
+            className={`group relative p-3 rounded-xl transition-all ${activeView === 'calendar' ? 'bg-gray-100 dark:bg-[#292929] text-[#e0b596]' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#292929]/50'}`}
           >
             <CalendarIcon className="w-6 h-6" />
             <span className="absolute left-14 bg-white dark:bg-black px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 whitespace-nowrap border border-gray-200 dark:border-[#333] shadow-md z-50 text-gray-900 dark:text-gray-100">Calendar</span>
+          </button>
+
+          <button
+            onClick={() => setActiveView('specials')}
+            className={`group relative p-3 rounded-xl transition-all ${activeView === 'specials' ? 'bg-gray-100 dark:bg-[#292929] text-[#e0b596]' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#292929]/50'}`}
+          >
+            <Sparkles className="w-6 h-6" />
+            <span className="absolute left-14 bg-white dark:bg-black px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 whitespace-nowrap border border-gray-200 dark:border-[#333] shadow-md z-50 text-gray-900 dark:text-gray-100">Specials</span>
           </button>
 
           <button onClick={() => setActiveView('pending')} className={`group relative p-3 rounded-xl transition-all ${activeView === 'pending' ? 'bg-gray-100 dark:bg-[#292929] text-[#e0b596]' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#292929]/50'}`}>
@@ -412,7 +471,7 @@ export function Dashboard({
             </button>
 
             {/* Today Navigation Group */}
-            <div className="flex items-center gap-4">
+            <div className={`flex items-center gap-4 ${(activeView !== 'home' && activeView !== 'calendar') ? 'opacity-0 pointer-events-none' : ''}`}>
               {/* Today Button & Chevrons */}
               <div className="flex items-center bg-transparent">
                 <button onClick={() => setCurrentDate(new Date())} className="px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#292929] rounded-md transition-colors mr-2">
@@ -471,13 +530,22 @@ export function Dashboard({
           </div>
 
           <div className="flex items-center gap-4">
-            {/* View Dropdown Placeholder */}
-            <div className="hidden md:flex items-center gap-1 text-sm text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#292929] px-3 py-1.5 rounded cursor-pointer">
-              <span>Work week</span>
-              <ChevronDown className="w-4 h-4" />
-            </div>
 
-            <div className="h-6 w-[1px] bg-gray-200 dark:bg-[#333] mx-2 hidden md:block"></div>
+            {/* View Switcher - Teams Style */}
+            <div className="flex bg-gray-100 dark:bg-[#292929] rounded-lg p-1 gap-1">
+              {(['day', 'workWeek', 'week'] as const).map((view) => (
+                <button
+                  key={view}
+                  onClick={() => setCalendarView(view)}
+                  className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${calendarView === view
+                    ? 'bg-white dark:bg-[#333] text-gray-900 dark:text-white shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                    }`}
+                >
+                  {view === 'day' ? 'Day' : view === 'workWeek' ? 'Work Week' : 'Week'}
+                </button>
+              ))}
+            </div>
 
             {/* Meet Actions */}
             <div className="flex items-center gap-2">
@@ -612,7 +680,7 @@ export function Dashboard({
                                       </span>
                                       <div className="flex items-center gap-1.5 mt-1 text-xs text-gray-500 dark:text-gray-400">
                                         <Clock className="w-3 h-3" />
-                                        {task.time}
+                                        {task.time ? format(parse(task.time, 'HH:mm', new Date()), 'h:mm a') : '--:--'}
                                       </div>
                                     </div>
                                   </td>
@@ -681,7 +749,158 @@ export function Dashboard({
             </div>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto p-6 bg-gray-50 dark:bg-[#1f1f1f]">
+          <div className="flex-1 overflow-y-auto p-0 bg-gray-50 dark:bg-[#1f1f1f]">
+            {activeView === 'calendar' && (
+              <div
+                className="flex flex-col h-full bg-white dark:bg-[#1f1f1f]"
+                ref={containerRef}
+                onMouseDown={handleMouseDown}
+              >
+                {/* Calendar Grid Header */}
+                <div className="flex bg-white dark:bg-[#1f1f1f] border-b border-gray-200 dark:border-[#333] sticky top-0 z-30">
+                  <div className="w-[60px] flex-shrink-0 border-r border-gray-200 dark:border-[#333] bg-gray-50/50 dark:bg-[#252525]" />
+                  <div className="flex-1 grid" style={{ gridTemplateColumns: `repeat(${weekDays.length}, 1fr)` }}>
+                    {weekDays.map((day, i) => (
+                      <div
+                        key={i}
+                        className={`py-3 text-center border-r border-gray-200 dark:border-[#333] last:border-r-0 ${isSameDay(day, new Date()) ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}
+                      >
+                        <div className={`text-xs font-semibold uppercase mb-1 ${isSameDay(day, new Date()) ? 'text-[#e0b596]' : 'text-gray-500 dark:text-gray-400'}`}>
+                          {format(day, 'EEE')}
+                        </div>
+                        <div className={`text-xl font-bold w-8 h-8 flex items-center justify-center mx-auto rounded-full ${isSameDay(day, new Date()) ? 'bg-[#e0b596] text-white shadow-lg shadow-[#e0b596]/30' : 'text-gray-900 dark:text-white'}`}>
+                          {format(day, 'd')}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Calendar Grid Body */}
+                <div className="flex-1 overflow-y-auto relative custom-scrollbar">
+                  <div className="flex min-h-[1440px] relative">
+                    {/* Time Column */}
+                    <div className="w-[60px] flex-shrink-0 border-r border-gray-200 dark:border-[#333] bg-white dark:bg-[#1f1f1f] select-none text-right pr-2 pt-2">
+                      {Array.from({ length: 24 }).map((_, i) => (
+                        <div key={i} className="h-[60px] text-xs text-gray-400 font-medium relative -top-2.5">
+                          {format(setHours(new Date(), i), 'h a')}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Grid Columns */}
+                    <div className="flex-1 grid relative bg-white dark:bg-[#1f1f1f]" style={{ gridTemplateColumns: `repeat(${weekDays.length}, 1fr)` }}>
+                      {/* Current Time Indicator */}
+                      {isToday(currentDate) && (
+                        <div
+                          className="absolute w-full z-10 pointer-events-none flex items-center"
+                          style={{
+                            top: (new Date().getHours() * 60 + new Date().getMinutes()) + 'px'
+                          }}
+                        >
+                          <div className="w-[60px] text-right pr-2 text-red-500 text-xs font-bold leading-none">
+                            {format(new Date(), 'h:mm a')}
+                          </div>
+                          <div className="flex-1 h-[2px] bg-red-500 relative">
+                            <div className="absolute -left-1.5 -top-1.5 w-3 h-3 rounded-full bg-red-500" />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Grid Lines */}
+                      {Array.from({ length: 24 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className="absolute w-full border-t border-gray-100 dark:border-[#333]"
+                          style={{ top: i * 60, height: 60 }}
+                        />
+                      ))}
+
+                      {/* Day Columns BG */}
+                      {weekDays.map((_, i) => (
+                        <div key={i} className="border-r border-gray-100 dark:border-[#333] last:border-r-0 h-full relative" />
+                      ))}
+
+                      {/* Events */}
+                      {eventsForGrid.map((event, idx) => (
+                        <div
+                          key={event.id}
+                          style={event.style}
+                          className={`absolute px-1 py-0.5 z-10 group overflow-hidden transition-all duration-200`}
+                        >
+                          <div
+                            onMouseDown={(e) => {
+                              e.stopPropagation();
+                              setActiveTaskId(event.id);
+                              setDragStart({
+                                x: 0,
+                                y: 0,
+                                time: event.start,
+                                dayIndex: getDayIndexFromX(e.clientX - (containerRef.current?.getBoundingClientRect().left || 0) - 60, (containerRef.current?.getBoundingClientRect().width || 0) - 60, weekDays.length)
+                              });
+                              setDragCurrent({
+                                x: 0,
+                                y: 0,
+                                time: event.start,
+                                dayIndex: getDayIndexFromX(e.clientX - (containerRef.current?.getBoundingClientRect().left || 0) - 60, (containerRef.current?.getBoundingClientRect().width || 0) - 60, weekDays.length)
+                              });
+                              setDragMode('move');
+                            }}
+                            className={`h-full w-full rounded-md border-l-4 p-1.5 text-xs cursor-pointer shadow-sm hover:shadow-md transition-shadow relative
+                              ${event.completed ? 'bg-gray-100 border-gray-400 text-gray-500 dark:bg-[#333] dark:border-gray-500 dark:text-gray-400' :
+                                event.category === 'Work' ? 'bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-900/20 dark:border-blue-500 dark:text-blue-300' :
+                                  event.category === 'Personal' ? 'bg-green-50 border-green-500 text-green-700 dark:bg-green-900/20 dark:border-green-500 dark:text-green-300' :
+                                    'bg-purple-50 border-purple-500 text-purple-700 dark:bg-purple-900/20 dark:border-purple-500 dark:text-purple-300'}
+                            `}
+                          >
+                            {/* Resize Handle */}
+                            <div
+                              className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize opacity-0 group-hover:opacity-100 z-20"
+                              onMouseDown={(e) => {
+                                e.stopPropagation();
+                                setActiveTaskId(event.id);
+                                setDragStart({ x: 0, y: 0, time: event.start, dayIndex: 0 }); // Day index doesn't matter for resize
+                                setDragCurrent({ x: 0, y: 0, time: event.end, dayIndex: 0 });
+                                setDragMode('resize');
+                              }}
+                            />
+
+                            <div className="font-semibold truncate flex items-center gap-1">
+                              {event.isSpecial && <Sparkles className="w-3 h-3 text-orange-500 shrink-0" />}
+                              {event.title}
+                            </div>
+                            <div className="opacity-80 truncate text-[10px]">
+                              {format(parse(event.time!, 'HH:mm', new Date()), 'h:mm a')} - {format(addMinutes(parse(event.time!, 'HH:mm', new Date()), event.duration || 60), 'h:mm a')}
+                            </div>
+                            {event.location && (
+                              <div className="flex items-center gap-0.5 opacity-70 truncate mt-0.5">
+                                <MapPin className="w-2.5 h-2.5" />
+                                {event.location}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Drag Preview (Create) */}
+                      {dragMode === 'create' && dragStart && dragCurrent && (
+                        <div
+                          style={{
+                            top: (Math.min(dragStart.time, dragCurrent.time) / 60) * HOUR_HEIGHT,
+                            height: (Math.abs(dragCurrent.time - dragStart.time) / 60) * HOUR_HEIGHT || (30 / 60 * HOUR_HEIGHT),
+                            left: `${(dragStart.dayIndex / weekDays.length) * 100}%`,
+                            width: `${100 / weekDays.length}%`,
+                            position: 'absolute'
+                          }}
+                          className="bg-[#e0b596]/30 border-2 border-[#e0b596] border-dashed rounded-md z-20 pointer-events-none"
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {activeView === 'locations' && <NearbyLocations tasks={tasks.filter(t => !t.completed)} />}
 
             {(activeView === 'pending' || activeView === 'completed') && (
@@ -736,6 +955,94 @@ export function Dashboard({
                 </div>
               </div>
             )}
+
+            {activeView === 'specials' && (
+              <div className="max-w-6xl mx-auto space-y-8">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-gradient-to-br from-yellow-100 to-orange-100 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-2xl">
+                    <Sparkles className="w-8 h-8 text-orange-500 dark:text-orange-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Specials in the Day</h2>
+                    <p className="text-gray-500 dark:text-gray-400">Discover festivals, holidays, and special moments.</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                  {/* Calendar Panel */}
+                  <div className="lg:col-span-5 xl:col-span-4">
+                    <div className="bg-white dark:bg-[#292929] rounded-2xl border border-gray-200 dark:border-[#333] p-6 shadow-sm">
+                      <DayPicker
+                        mode="single"
+                        selected={currentDate}
+                        onSelect={(date) => date && setCurrentDate(date)}
+                        modifiers={{
+                          special: (date) => allSpecials.some(f => f.date === format(date, 'yyyy-MM-dd'))
+                        }}
+                        modifiersStyles={{
+                          special: { fontWeight: 'bold', color: '#f59e0b' },
+                          selected: { backgroundColor: '#e0b596', color: 'white' },
+                          today: { color: '#e0b596', fontWeight: 'bold' }
+                        }}
+                        styles={{
+                          root: { width: '100%', margin: 0 },
+                          months: { width: '100%' },
+                          table: { width: '100%' },
+                          day: { margin: '0 auto' },
+                          nav_button: { color: theme === 'dark' ? '#f5f5f5' : '#111827' },
+                          caption: { color: theme === 'dark' ? '#f5f5f5' : '#111827' },
+                          head_cell: { color: theme === 'dark' ? '#9ca3af' : '#6b7280' }
+                        }}
+                        className="custom-day-picker w-full"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Events List */}
+                  <div className="lg:col-span-7 xl:col-span-8 space-y-6">
+                    <div className="bg-white dark:bg-[#292929] rounded-2xl border border-gray-200 dark:border-[#333] p-8 min-h-[400px]">
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                        Events for {format(currentDate, 'MMMM d, yyyy')}
+                      </h3>
+
+                      {specialsForDate.length > 0 ? (
+                        <div className="space-y-4">
+                          {specialsForDate.map((event, idx) => (
+                            <div key={idx} className="flex items-start gap-4 p-4 rounded-xl bg-gray-50 dark:bg-[#1f1f1f] border border-gray-100 dark:border-[#333] hover:border-[#e0b596]/30 transition-colors">
+                              <div className={`p-3 rounded-full ${event.type === 'religious' ? 'bg-purple-100 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400' :
+                                event.type === 'public' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' :
+                                  event.type === 'seasonal' ? 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400' :
+                                    'bg-orange-100 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400'
+                                }`}>
+                                {event.type === 'birthday' ? <Gift className="w-5 h-5" /> :
+                                  event.type === 'anniversary' ? <Gift className="w-5 h-5" /> :
+                                    event.type === 'religious' ? <Moon className="w-5 h-5" /> :
+                                      event.type === 'public' ? <Briefcase className="w-5 h-5" /> :
+                                        <Sparkles className="w-5 h-5" />}
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-lg text-gray-900 dark:text-white">{event.name}</h4>
+                                <span className="inline-block mt-1 px-2 py-0.5 rounded text-xs font-medium bg-white dark:bg-[#292929] border border-gray-200 dark:border-[#333] capitalize text-gray-500 dark:text-gray-400">
+                                  {event.type} Event
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center py-12 text-center text-gray-500 dark:text-gray-400">
+                          <div className="w-16 h-16 bg-gray-100 dark:bg-[#333] rounded-full flex items-center justify-center mb-4">
+                            <CalendarIcon className="w-8 h-8 opacity-50" />
+                          </div>
+                          <p className="text-lg font-medium">No special events found for this day.</p>
+                          <p className="text-sm mt-1">Select another date from the calendar to view specials.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -780,14 +1087,21 @@ export function Dashboard({
 
                 <button
                   onClick={() => {
-                    setActiveView('home');
+                    setActiveView('calendar');
                     setShowSidebar(false);
-                    setTimeout(() => document.getElementById('calendar-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
                   }}
-                  className="flex items-center gap-4 p-3 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#292929]/50 transition-all"
+                  className={`flex items-center gap-4 p-3 rounded-xl transition-all ${activeView === 'calendar' ? 'bg-gray-100 dark:bg-[#292929] text-[#e0b596] font-medium' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#292929]/50'}`}
                 >
                   <CalendarIcon className="w-5 h-5" />
                   <span>Calendar</span>
+                </button>
+
+                <button
+                  onClick={() => { setActiveView('specials'); setShowSidebar(false); }}
+                  className={`flex items-center gap-4 p-3 rounded-xl transition-all ${activeView === 'specials' ? 'bg-gray-100 dark:bg-[#292929] text-[#e0b596] font-medium' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#292929]/50'}`}
+                >
+                  <Sparkles className="w-5 h-5" />
+                  <span>Specials</span>
                 </button>
 
                 <button

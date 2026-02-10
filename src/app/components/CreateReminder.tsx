@@ -12,7 +12,8 @@ import {
   User,
   X,
   Check,
-  AlertCircle
+  AlertCircle,
+  Sparkles
 } from 'lucide-react';
 import { Task } from '@/app/types';
 import { toast } from 'sonner';
@@ -73,6 +74,7 @@ export function CreateReminder({
   const [description, setDescription] = useState('');
   const [repeat, setRepeat] = useState('never');
   const [priority, setPriority] = useState('normal');
+  const [isSpecial, setIsSpecial] = useState(false);
 
   // Calculate Duration to store
   const getDuration = () => {
@@ -96,7 +98,9 @@ export function CreateReminder({
       duration,
       isAllDay,
       repeat,
-      priority
+      priority,
+      isSpecial,
+      specialType: isSpecial ? 'other' : undefined
     });
 
     // We append a hidden-ish string or just purely textual
@@ -218,6 +222,21 @@ export function CreateReminder({
                   className="w-4 h-4 rounded border-gray-400 dark:border-gray-600 bg-gray-100 dark:bg-[#292929] text-[#e0b596] focus:ring-[#e0b596]"
                 />
                 <label htmlFor="allDay" className="text-sm text-gray-700 dark:text-gray-300">All day</label>
+              </div>
+
+              {/* Add to Specials Toggle */}
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="isSpecial"
+                  checked={isSpecial}
+                  onChange={(e) => setIsSpecial(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-400 dark:border-gray-600 bg-gray-100 dark:bg-[#292929] text-[#e0b596] focus:ring-[#e0b596]"
+                />
+                <label htmlFor="isSpecial" className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                  <Sparkles className="w-3.5 h-3.5 text-orange-400" />
+                  Add to Specials
+                </label>
               </div>
             </div>
           </div>

@@ -14,6 +14,8 @@ export interface Task {
   duration?: number; // in minutes
   location?: string;
   isAllDay?: boolean;
+  isSpecial?: boolean;
+  specialType?: 'birthday' | 'anniversary' | 'cultural' | 'other';
 }
 
 
@@ -37,5 +39,5 @@ export interface NearbyLocation {
 export interface Festival {
   date: string; // YYYY-MM-DD
   name: string;
-  type: 'public' | 'religious' | 'seasonal' | 'other';
+  type: 'public' | 'religious' | 'seasonal' | 'other' | 'birthday' | 'anniversary' | 'cultural';
 }
